@@ -35,8 +35,8 @@ or in `mcpServers`:
 }
 ```
 
-Exposed tools: `fetch_reference_patterns_documentation` (returns `llms.txt`),
-`search_reference_patterns_documentation`, `search_reference_patterns_code`.
+Exposed tools: `fetch_reference_docs` (returns `llms.txt`),
+`search_reference_docs`, `search_reference_code`, `fetch_generic_url_content`.
 
 ## Add a pattern
 
