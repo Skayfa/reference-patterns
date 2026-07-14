@@ -36,11 +36,18 @@ const (
 	// NewsletterServiceSubscribeProcedure is the fully-qualified name of the NewsletterService's
 	// Subscribe RPC.
 	NewsletterServiceSubscribeProcedure = "/example.v1.NewsletterService/Subscribe"
+	// NewsletterServiceGetSubscriptionProcedure is the fully-qualified name of the NewsletterService's
+	// GetSubscription RPC.
+	NewsletterServiceGetSubscriptionProcedure = "/example.v1.NewsletterService/GetSubscription"
 )
 
 // NewsletterServiceClient is a client for the example.v1.NewsletterService service.
 type NewsletterServiceClient interface {
 	Subscribe(context.Context, *connect.Request[v1.SubscribeRequest]) (*connect.Response[v1.SubscribeResponse], error)
+	// NO_SIDE_EFFECTS lets Connect clients send this RPC as an HTTP GET
+	// (opt-in with useHttpGet / connect.WithHTTPGet), making reads cacheable
+	// by browsers and CDNs. connect-go serves GET for such methods natively.
+	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
 }
 
 // NewNewsletterServiceClient constructs a client for the example.v1.NewsletterService service. By
@@ -60,12 +67,20 @@ func NewNewsletterServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(newsletterServiceMethods.ByName("Subscribe")),
 			connect.WithClientOptions(opts...),
 		),
+		getSubscription: connect.NewClient[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse](
+			httpClient,
+			baseURL+NewsletterServiceGetSubscriptionProcedure,
+			connect.WithSchema(newsletterServiceMethods.ByName("GetSubscription")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // newsletterServiceClient implements NewsletterServiceClient.
 type newsletterServiceClient struct {
-	subscribe *connect.Client[v1.SubscribeRequest, v1.SubscribeResponse]
+	subscribe       *connect.Client[v1.SubscribeRequest, v1.SubscribeResponse]
+	getSubscription *connect.Client[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse]
 }
 
 // Subscribe calls example.v1.NewsletterService.Subscribe.
@@ -73,9 +88,18 @@ func (c *newsletterServiceClient) Subscribe(ctx context.Context, req *connect.Re
 	return c.subscribe.CallUnary(ctx, req)
 }
 
+// GetSubscription calls example.v1.NewsletterService.GetSubscription.
+func (c *newsletterServiceClient) GetSubscription(ctx context.Context, req *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
+	return c.getSubscription.CallUnary(ctx, req)
+}
+
 // NewsletterServiceHandler is an implementation of the example.v1.NewsletterService service.
 type NewsletterServiceHandler interface {
 	Subscribe(context.Context, *connect.Request[v1.SubscribeRequest]) (*connect.Response[v1.SubscribeResponse], error)
+	// NO_SIDE_EFFECTS lets Connect clients send this RPC as an HTTP GET
+	// (opt-in with useHttpGet / connect.WithHTTPGet), making reads cacheable
+	// by browsers and CDNs. connect-go serves GET for such methods natively.
+	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
 }
 
 // NewNewsletterServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -91,10 +115,19 @@ func NewNewsletterServiceHandler(svc NewsletterServiceHandler, opts ...connect.H
 		connect.WithSchema(newsletterServiceMethods.ByName("Subscribe")),
 		connect.WithHandlerOptions(opts...),
 	)
+	newsletterServiceGetSubscriptionHandler := connect.NewUnaryHandler(
+		NewsletterServiceGetSubscriptionProcedure,
+		svc.GetSubscription,
+		connect.WithSchema(newsletterServiceMethods.ByName("GetSubscription")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/example.v1.NewsletterService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case NewsletterServiceSubscribeProcedure:
 			newsletterServiceSubscribeHandler.ServeHTTP(w, r)
+		case NewsletterServiceGetSubscriptionProcedure:
+			newsletterServiceGetSubscriptionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -106,4 +139,8 @@ type UnimplementedNewsletterServiceHandler struct{}
 
 func (UnimplementedNewsletterServiceHandler) Subscribe(context.Context, *connect.Request[v1.SubscribeRequest]) (*connect.Response[v1.SubscribeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("example.v1.NewsletterService.Subscribe is not implemented"))
+}
+
+func (UnimplementedNewsletterServiceHandler) GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("example.v1.NewsletterService.GetSubscription is not implemented"))
 }

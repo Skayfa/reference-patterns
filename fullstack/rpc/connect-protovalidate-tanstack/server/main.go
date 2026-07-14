@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"connectrpc.com/connect"
 	"connectrpc.com/validate"
@@ -17,7 +18,19 @@ import (
 	"github.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/pb/example/v1/examplev1connect"
 )
 
-type newsletterServer struct{}
+type subscription struct {
+	email string
+	name  string
+}
+
+type newsletterServer struct {
+	mu   sync.RWMutex
+	subs map[string]subscription
+}
+
+func newNewsletterServer() *newsletterServer {
+	return &newsletterServer{subs: make(map[string]subscription)}
+}
 
 // Subscribe only holds business logic: by the time it runs, the request
 // has already passed the protovalidate rules declared in newsletter.proto.
@@ -26,7 +39,30 @@ func (s *newsletterServer) Subscribe(
 	req *connect.Request[examplev1.SubscribeRequest],
 ) (*connect.Response[examplev1.SubscribeResponse], error) {
 	id := fmt.Sprintf("sub_%x", sha256.Sum256([]byte(req.Msg.GetEmail())))[:16]
+	s.mu.Lock()
+	s.subs[id] = subscription{email: req.Msg.GetEmail(), name: req.Msg.GetName()}
+	s.mu.Unlock()
 	return connect.NewResponse(&examplev1.SubscribeResponse{SubscriptionId: id}), nil
+}
+
+// GetSubscription is declared NO_SIDE_EFFECTS in the proto, so connect-go
+// also serves it over HTTP GET — no extra server code needed.
+func (s *newsletterServer) GetSubscription(
+	_ context.Context,
+	req *connect.Request[examplev1.GetSubscriptionRequest],
+) (*connect.Response[examplev1.GetSubscriptionResponse], error) {
+	s.mu.RLock()
+	sub, ok := s.subs[req.Msg.GetSubscriptionId()]
+	s.mu.RUnlock()
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound,
+			fmt.Errorf("subscription %q not found", req.Msg.GetSubscriptionId()))
+	}
+	return connect.NewResponse(&examplev1.GetSubscriptionResponse{
+		SubscriptionId: req.Msg.GetSubscriptionId(),
+		Email:          sub.email,
+		Name:           sub.name,
+	}), nil
 }
 
 // newMux is shared by main and the tests, so tests exercise the exact
@@ -34,7 +70,7 @@ func (s *newsletterServer) Subscribe(
 func newMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	path, handler := examplev1connect.NewNewsletterServiceHandler(
-		&newsletterServer{},
+		newNewsletterServer(),
 		connect.WithInterceptors(validate.NewInterceptor()),
 	)
 	mux.Handle(path, handler)

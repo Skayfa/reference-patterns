@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file example/v1/newsletter.proto.
  */
 export const file_example_v1_newsletter: GenFile = /*@__PURE__*/
-  fileDesc("ChtleGFtcGxlL3YxL25ld3NsZXR0ZXIucHJvdG8SCmV4YW1wbGUudjEiQwoQU3Vic2NyaWJlUmVxdWVzdBIWCgVlbWFpbBgBIAEoCUIHukgEcgJgARIXCgRuYW1lGAIgASgJQgm6SAZyBBACGDIiLAoRU3Vic2NyaWJlUmVzcG9uc2USFwoPc3Vic2NyaXB0aW9uX2lkGAEgASgJMl8KEU5ld3NsZXR0ZXJTZXJ2aWNlEkoKCVN1YnNjcmliZRIcLmV4YW1wbGUudjEuU3Vic2NyaWJlUmVxdWVzdBodLmV4YW1wbGUudjEuU3Vic2NyaWJlUmVzcG9uc2UiAELcAQoOY29tLmV4YW1wbGUudjFCD05ld3NsZXR0ZXJQcm90b1ABWnBnaXRodWIuY29tL1NrYXlmYS9yZWZlcmVuY2UtcGF0dGVybnMvZnVsbHN0YWNrL3JwYy9jb25uZWN0LXByb3RvdmFsaWRhdGUtdGFuc3RhY2svc2VydmVyL3BiL2V4YW1wbGUvdjE7ZXhhbXBsZXYxogIDRVhYqgIKRXhhbXBsZS5WMcoCCkV4YW1wbGVcVjHiAhZFeGFtcGxlXFYxXEdQQk1ldGFkYXRh6gILRXhhbXBsZTo6VjFiBnByb3RvMw", [file_buf_validate_validate]);
+  fileDesc("ChtleGFtcGxlL3YxL25ld3NsZXR0ZXIucHJvdG8SCmV4YW1wbGUudjEiQwoQU3Vic2NyaWJlUmVxdWVzdBIWCgVlbWFpbBgBIAEoCUIHukgEcgJgARIXCgRuYW1lGAIgASgJQgm6SAZyBBACGDIiLAoRU3Vic2NyaWJlUmVzcG9uc2USFwoPc3Vic2NyaXB0aW9uX2lkGAEgASgJIjoKFkdldFN1YnNjcmlwdGlvblJlcXVlc3QSIAoPc3Vic2NyaXB0aW9uX2lkGAEgASgJQge6SARyAhABIk8KF0dldFN1YnNjcmlwdGlvblJlc3BvbnNlEhcKD3N1YnNjcmlwdGlvbl9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJMsABChFOZXdzbGV0dGVyU2VydmljZRJKCglTdWJzY3JpYmUSHC5leGFtcGxlLnYxLlN1YnNjcmliZVJlcXVlc3QaHS5leGFtcGxlLnYxLlN1YnNjcmliZVJlc3BvbnNlIgASXwoPR2V0U3Vic2NyaXB0aW9uEiIuZXhhbXBsZS52MS5HZXRTdWJzY3JpcHRpb25SZXF1ZXN0GiMuZXhhbXBsZS52MS5HZXRTdWJzY3JpcHRpb25SZXNwb25zZSIDkAIBQtwBCg5jb20uZXhhbXBsZS52MUIPTmV3c2xldHRlclByb3RvUAFacGdpdGh1Yi5jb20vU2theWZhL3JlZmVyZW5jZS1wYXR0ZXJucy9mdWxsc3RhY2svcnBjL2Nvbm5lY3QtcHJvdG92YWxpZGF0ZS10YW5zdGFjay9zZXJ2ZXIvcGIvZXhhbXBsZS92MTtleGFtcGxldjGiAgNFWFiqAgpFeGFtcGxlLlYxygIKRXhhbXBsZVxWMeICFkV4YW1wbGVcVjFcR1BCTWV0YWRhdGHqAgtFeGFtcGxlOjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
 
 /**
  * @generated from message example.v1.SubscribeRequest
@@ -53,6 +53,50 @@ export const SubscribeResponseSchema: GenMessage<SubscribeResponse> = /*@__PURE_
   messageDesc(file_example_v1_newsletter, 1);
 
 /**
+ * @generated from message example.v1.GetSubscriptionRequest
+ */
+export type GetSubscriptionRequest = Message<"example.v1.GetSubscriptionRequest"> & {
+  /**
+   * @generated from field: string subscription_id = 1;
+   */
+  subscriptionId: string;
+};
+
+/**
+ * Describes the message example.v1.GetSubscriptionRequest.
+ * Use `create(GetSubscriptionRequestSchema)` to create a new message.
+ */
+export const GetSubscriptionRequestSchema: GenMessage<GetSubscriptionRequest> = /*@__PURE__*/
+  messageDesc(file_example_v1_newsletter, 2);
+
+/**
+ * @generated from message example.v1.GetSubscriptionResponse
+ */
+export type GetSubscriptionResponse = Message<"example.v1.GetSubscriptionResponse"> & {
+  /**
+   * @generated from field: string subscription_id = 1;
+   */
+  subscriptionId: string;
+
+  /**
+   * @generated from field: string email = 2;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message example.v1.GetSubscriptionResponse.
+ * Use `create(GetSubscriptionResponseSchema)` to create a new message.
+ */
+export const GetSubscriptionResponseSchema: GenMessage<GetSubscriptionResponse> = /*@__PURE__*/
+  messageDesc(file_example_v1_newsletter, 3);
+
+/**
  * The proto file is the single source of truth for the contract AND the
  * validation rules: protovalidate constraints below are enforced by the
  * server interceptor, and mirrored by the frontend form schema.
@@ -67,6 +111,18 @@ export const NewsletterService: GenService<{
     methodKind: "unary";
     input: typeof SubscribeRequestSchema;
     output: typeof SubscribeResponseSchema;
+  },
+  /**
+   * NO_SIDE_EFFECTS lets Connect clients send this RPC as an HTTP GET
+   * (opt-in with useHttpGet / connect.WithHTTPGet), making reads cacheable
+   * by browsers and CDNs. connect-go serves GET for such methods natively.
+   *
+   * @generated from rpc example.v1.NewsletterService.GetSubscription
+   */
+  getSubscription: {
+    methodKind: "unary";
+    input: typeof GetSubscriptionRequestSchema;
+    output: typeof GetSubscriptionResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_example_v1_newsletter, 0);

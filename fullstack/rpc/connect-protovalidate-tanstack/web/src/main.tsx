@@ -9,7 +9,12 @@ import { createRoot } from "react-dom/client";
 import { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
 import { SubscribeForm } from "./subscribe-form.js";
 
-const transport = createConnectTransport({ baseUrl: "http://localhost:8080" });
+const transport = createConnectTransport({
+  baseUrl: "http://localhost:8080",
+  // Send NO_SIDE_EFFECTS RPCs (GetSubscription) as HTTP GET so browsers
+  // and CDNs can cache them; RPCs with side effects still go as POST.
+  useHttpGet: true,
+});
 const client = createClient(NewsletterService, transport);
 const queryClient = new QueryClient();
 

@@ -118,6 +118,110 @@ func (x *SubscribeResponse) GetSubscriptionId() string {
 	return ""
 }
 
+type GetSubscriptionRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SubscriptionId string                 `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionRequest) Reset() {
+	*x = GetSubscriptionRequest{}
+	mi := &file_example_v1_newsletter_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionRequest) ProtoMessage() {}
+
+func (x *GetSubscriptionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_example_v1_newsletter_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionRequest.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return file_example_v1_newsletter_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetSubscriptionRequest) GetSubscriptionId() string {
+	if x != nil {
+		return x.SubscriptionId
+	}
+	return ""
+}
+
+type GetSubscriptionResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SubscriptionId string                 `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
+	Email          string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Name           string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionResponse) Reset() {
+	*x = GetSubscriptionResponse{}
+	mi := &file_example_v1_newsletter_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionResponse) ProtoMessage() {}
+
+func (x *GetSubscriptionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_example_v1_newsletter_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionResponse.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionResponse) Descriptor() ([]byte, []int) {
+	return file_example_v1_newsletter_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetSubscriptionResponse) GetSubscriptionId() string {
+	if x != nil {
+		return x.SubscriptionId
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 var File_example_v1_newsletter_proto protoreflect.FileDescriptor
 
 const file_example_v1_newsletter_proto_rawDesc = "" +
@@ -128,9 +232,16 @@ const file_example_v1_newsletter_proto_rawDesc = "" +
 	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12\x1d\n" +
 	"\x04name\x18\x02 \x01(\tB\t\xbaH\x06r\x04\x10\x02\x182R\x04name\"<\n" +
 	"\x11SubscribeResponse\x12'\n" +
-	"\x0fsubscription_id\x18\x01 \x01(\tR\x0esubscriptionId2_\n" +
+	"\x0fsubscription_id\x18\x01 \x01(\tR\x0esubscriptionId\"J\n" +
+	"\x16GetSubscriptionRequest\x120\n" +
+	"\x0fsubscription_id\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x0esubscriptionId\"l\n" +
+	"\x17GetSubscriptionResponse\x12'\n" +
+	"\x0fsubscription_id\x18\x01 \x01(\tR\x0esubscriptionId\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name2\xc0\x01\n" +
 	"\x11NewsletterService\x12J\n" +
-	"\tSubscribe\x12\x1c.example.v1.SubscribeRequest\x1a\x1d.example.v1.SubscribeResponse\"\x00B\xdc\x01\n" +
+	"\tSubscribe\x12\x1c.example.v1.SubscribeRequest\x1a\x1d.example.v1.SubscribeResponse\"\x00\x12_\n" +
+	"\x0fGetSubscription\x12\".example.v1.GetSubscriptionRequest\x1a#.example.v1.GetSubscriptionResponse\"\x03\x90\x02\x01B\xdc\x01\n" +
 	"\x0ecom.example.v1B\x0fNewsletterProtoP\x01Zpgithub.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/pb/example/v1;examplev1\xa2\x02\x03EXX\xaa\x02\n" +
 	"Example.V1\xca\x02\n" +
 	"Example\\V1\xe2\x02\x16Example\\V1\\GPBMetadata\xea\x02\vExample::V1b\x06proto3"
@@ -147,16 +258,20 @@ func file_example_v1_newsletter_proto_rawDescGZIP() []byte {
 	return file_example_v1_newsletter_proto_rawDescData
 }
 
-var file_example_v1_newsletter_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_example_v1_newsletter_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_example_v1_newsletter_proto_goTypes = []any{
-	(*SubscribeRequest)(nil),  // 0: example.v1.SubscribeRequest
-	(*SubscribeResponse)(nil), // 1: example.v1.SubscribeResponse
+	(*SubscribeRequest)(nil),        // 0: example.v1.SubscribeRequest
+	(*SubscribeResponse)(nil),       // 1: example.v1.SubscribeResponse
+	(*GetSubscriptionRequest)(nil),  // 2: example.v1.GetSubscriptionRequest
+	(*GetSubscriptionResponse)(nil), // 3: example.v1.GetSubscriptionResponse
 }
 var file_example_v1_newsletter_proto_depIdxs = []int32{
 	0, // 0: example.v1.NewsletterService.Subscribe:input_type -> example.v1.SubscribeRequest
-	1, // 1: example.v1.NewsletterService.Subscribe:output_type -> example.v1.SubscribeResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: example.v1.NewsletterService.GetSubscription:input_type -> example.v1.GetSubscriptionRequest
+	1, // 2: example.v1.NewsletterService.Subscribe:output_type -> example.v1.SubscribeResponse
+	3, // 3: example.v1.NewsletterService.GetSubscription:output_type -> example.v1.GetSubscriptionResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -173,7 +288,7 @@ func file_example_v1_newsletter_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_example_v1_newsletter_proto_rawDesc), len(file_example_v1_newsletter_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

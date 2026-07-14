@@ -5,7 +5,7 @@
 
 ## Fullstack
 
-- [connect-protovalidate-tanstack](https://github.com/Skayfa/reference-patterns/blob/main/fullstack/rpc/connect-protovalidate-tanstack/PATTERN.md): End-to-end typed RPC with validation — Go Connect server enforcing protovalidate rules declared in the proto, React form with TanStack Form + Query, tested on both sides without a network
+- [connect-protovalidate-tanstack](https://github.com/Skayfa/reference-patterns/blob/main/fullstack/rpc/connect-protovalidate-tanstack/PATTERN.md): End-to-end typed RPC with validation — Go Connect server enforcing protovalidate rules declared in the proto, React front with TanStack Form (writes) and TanStack Query over HTTP GET (cacheable reads), tested on both sides without a network
 
 ## Go
 

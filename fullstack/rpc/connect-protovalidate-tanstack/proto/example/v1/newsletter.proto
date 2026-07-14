@@ -9,6 +9,13 @@ import "buf/validate/validate.proto";
 // server interceptor, and mirrored by the frontend form schema.
 service NewsletterService {
   rpc Subscribe(SubscribeRequest) returns (SubscribeResponse) {}
+
+  // NO_SIDE_EFFECTS lets Connect clients send this RPC as an HTTP GET
+  // (opt-in with useHttpGet / connect.WithHTTPGet), making reads cacheable
+  // by browsers and CDNs. connect-go serves GET for such methods natively.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message SubscribeRequest {
@@ -21,4 +28,14 @@ message SubscribeRequest {
 
 message SubscribeResponse {
   string subscription_id = 1;
+}
+
+message GetSubscriptionRequest {
+  string subscription_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message GetSubscriptionResponse {
+  string subscription_id = 1;
+  string email = 2;
+  string name = 3;
 }
