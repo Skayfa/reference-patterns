@@ -68,12 +68,15 @@ or mirrors it:
     documented composition (`QueryErrorResetBoundary` +
     `react-error-boundary`, `onReset={reset}` so Retry actually
     refetches), written once for the whole app.
-  - **Writes** (`web/src/subscribe-form.tsx`): the `onSubmitAsync`
-    validator runs the mutation and returns TanStack Form's documented
-    `{ form, fields }` error shape — which is exactly what
-    `serverErrorMap` builds from the RPC's `Violations` details, dotted
-    field paths included. The framework distributes field entries onto
-    the fields; `<form.FormError />` renders the form-level part.
+  - **Writes** (`web/src/form/use-form-mutation.ts`): `useFormMutation`
+    binds any Connect mutation to TanStack Form's submit validator, once
+    for the whole app — the mutation runs at submit time, and RPC
+    failures come back as the documented `{ form, fields }` error shape
+    (built by `serverErrorMap` from the `Violations` details, dotted
+    field paths included). The framework distributes field entries onto
+    the fields; `<form.FormError />` renders the form-level part. A form
+    contains zero error-handling code:
+    `validators: { onChange, onSubmitAsync }`.
   - Raw RPC messages never reach the DOM (`userMessage` maps codes to
     copy), and `createQueryClient` retries transient codes only, queries
     only.
