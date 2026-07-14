@@ -9,6 +9,7 @@
 
 ## Go
 
+- [bounded-parallel-map](https://github.com/Skayfa/reference-patterns/blob/main/go/concurrency/bounded-parallel-map/PATTERN.md): Bounded parallel fan-out in Go — a generic Map with errgroup, context cancellation on first error, order-preserving results, and deterministic concurrency tests (no sleeps)
 - [table-driven-tests](https://github.com/Skayfa/reference-patterns/blob/main/go/testing/table-driven-tests/PATTERN.md): Idiomatic Go table-driven tests — named map cases, parallel subtests, t.Helper assertion helpers
 
 ## Protobuf

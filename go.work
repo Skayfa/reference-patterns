@@ -2,5 +2,6 @@ go 1.26.4
 
 use (
 	./fullstack/rpc/connect-protovalidate-tanstack/server
+	./go/concurrency/bounded-parallel-map
 	./go/testing/table-driven-tests
 )
