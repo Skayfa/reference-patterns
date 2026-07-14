@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "buf/validate/validate.proto";
+
+// The proto file is the single source of truth for the contract AND the
+// validation rules: protovalidate constraints below are enforced by the
+// server interceptor, and mirrored by the frontend form schema.
+service NewsletterService {
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse) {}
+}
+
+message SubscribeRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 2
+    max_len: 50
+  }];
+}
+
+message SubscribeResponse {
+  string subscription_id = 1;
+}

@@ -3,6 +3,10 @@
 > Personal reference of implementation and testing patterns across languages.
 > Each pattern is a self-contained, runnable example documented in its PATTERN.md.
 
+## Fullstack
+
+- [connect-protovalidate-tanstack](https://github.com/Skayfa/reference-patterns/blob/main/fullstack/rpc/connect-protovalidate-tanstack/PATTERN.md): End-to-end typed RPC with validation — Go Connect server enforcing protovalidate rules declared in the proto, React form with TanStack Form + Query, tested on both sides without a network
+
 ## Go
 
 - [table-driven-tests](https://github.com/Skayfa/reference-patterns/blob/main/go/testing/table-driven-tests/PATTERN.md): Idiomatic Go table-driven tests — named map cases, parallel subtests, t.Helper assertion helpers

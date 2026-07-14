@@ -1,0 +1,25 @@
+# Regenerate with: buf generate
+# Generated code is committed (server/pb, web/src/pb) so the pattern runs
+# without a codegen step.
+version: v2
+managed:
+  enabled: true
+  disable:
+    # Keep the protovalidate dep pointing at its published Go SDK.
+    - module: buf.build/bufbuild/protovalidate
+  override:
+    - file_option: go_package_prefix
+      value: github.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/pb
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: server/pb
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: server/pb
+    opt: paths=source_relative
+  # include_imports so the TS output also contains buf/validate/validate_pb.ts,
+  # which the generated schema imports.
+  - remote: buf.build/bufbuild/es
+    out: web/src/pb
+    opt: target=ts
+    include_imports: true

@@ -3,7 +3,13 @@
 # re-verifies every pattern at once.
 packages:
   - typescript/*/*
+  - fullstack/*/*/web
 catalog:
+  "@bufbuild/protobuf": ^2.12.0
+  "@connectrpc/connect": ^2.1.0
+  "@connectrpc/connect-web": ^2.1.0
+  "@tanstack/react-form": ^1.33.0
+  "@tanstack/react-query": ^5.101.0
   "@testing-library/jest-dom": ^6.6.0
   "@testing-library/react": ^16.3.0
   "@testing-library/user-event": ^14.6.0
@@ -15,3 +21,4 @@ catalog:
   react-dom: ^19.2.0
   typescript: ^5.7.0
   vitest: ^4.1.0
+  zod: ^4.4.0
