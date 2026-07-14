@@ -38,7 +38,11 @@ describe("SubscribeForm", () => {
       screen.getByText("must be a valid email address"),
     ).toBeInTheDocument();
     expect(screen.getByText("must be at least 2 characters")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Subscribe" })).toBeDisabled();
+    // aria-disabled, not disabled (a11y): the button stays clickable but
+    // submitting an invalid form only re-runs validation.
+    const button = screen.getByRole("button", { name: "Subscribe" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    await user.click(button);
     expect(subscribe).not.toHaveBeenCalled();
   });
 
@@ -83,7 +87,7 @@ describe("SubscribeForm", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("recovers after a server rejection: editing re-enables submit", async () => {
+  it("recovers after a server rejection: fixing and resubmitting succeeds", async () => {
     const user = userEvent.setup();
     let calls = 0;
     renderWithNewsletter(<SubscribeForm />, {
@@ -105,19 +109,15 @@ describe("SubscribeForm", () => {
     expect(
       await screen.findByText("email is already subscribed"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Subscribe" })).toBeDisabled();
 
-    // Editing clears the onServer cause: the error disappears and
-    // canSubmit recovers — no deadlock.
+    // The button is aria-disabled but stays clickable: fixing the input
+    // and resubmitting re-runs onSubmitAsync with fresh results — no
+    // deadlock, and the stale violation is replaced.
     await user.type(screen.getByLabelText("Email"), "x");
-    expect(
-      screen.queryByText("email is already subscribed"),
-    ).not.toBeInTheDocument();
-    const button = screen.getByRole("button", { name: "Subscribe" });
-    expect(button).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Subscribe" }));
 
-    await user.click(button);
     expect(await screen.findByText(/sub_second_try/)).toBeInTheDocument();
+    expect(calls).toBe(2);
   });
 
   it("shows a code-mapped message for non-field errors, never the raw one", async () => {

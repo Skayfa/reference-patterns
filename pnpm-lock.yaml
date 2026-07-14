@@ -54,6 +54,9 @@ catalogs:
     react-dom:
       specifier: ^19.2.0
       version: 19.2.7
+    react-error-boundary:
+      specifier: ^6.1.0
+      version: 6.1.2
     typescript:
       specifier: ^5.7.0
       version: 5.9.3
@@ -94,6 +97,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
+      react-error-boundary:
+        specifier: 'catalog:'
+        version: 6.1.2(react@19.2.7)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 'catalog:'
@@ -938,6 +944,11 @@ packages:
     peerDependencies:
       react: ^19.2.7
 
+  react-error-boundary@6.1.2:
+    resolution: {integrity: sha512-3DpCr5HVdZ0caUjYE/kIHBEJN0mNP3ZCgf16c48uJ5TbWjorKVp+YG8W3XqlJ7vJAVNw6wNIImyPXmFydwmyng==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
@@ -1777,6 +1788,10 @@ snapshots:
     dependencies:
       react: 19.2.7
       scheduler: 0.27.0
+
+  react-error-boundary@6.1.2(react@19.2.7):
+    dependencies:
+      react: 19.2.7
 
   react-is@17.0.2: {}
 

@@ -1,29 +1,26 @@
-import { useQuery } from "@connectrpc/connect-query";
+import { useSuspenseQuery } from "@connectrpc/connect-query";
 
-import { userMessage } from "./connect-errors.js";
 import { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
 
 /**
- * The read side: connect-query derives the cache key from the method
- * descriptor + input (no manual queryKey), and because GetSubscription is
- * NO_SIDE_EFFECTS, a transport created with `useHttpGet: true` sends it as
- * a plain HTTP GET — cacheable by the browser and any CDN in front.
+ * The read side, happy path only: useSuspenseQuery guarantees data —
+ * loading surfaces at the nearest <Suspense> and failures at the nearest
+ * error boundary (see RpcBoundary), so no isPending/isError plumbing here
+ * or in any other read component. GetSubscription is NO_SIDE_EFFECTS, so
+ * a transport with `useHttpGet: true` sends it as a cacheable HTTP GET.
  */
 export function SubscriptionStatus({
   subscriptionId,
 }: {
   subscriptionId: string;
 }) {
-  const query = useQuery(NewsletterService.method.getSubscription, {
+  const { data } = useSuspenseQuery(NewsletterService.method.getSubscription, {
     subscriptionId,
   });
 
-  if (query.isPending) return <p>Loading subscription…</p>;
-  if (query.isError) return <p role="alert">{userMessage(query.error)}</p>;
-
   return (
     <p>
-      {query.data.name} &lt;{query.data.email}&gt; — {query.data.subscriptionId}
+      {data.name} &lt;{data.email}&gt; — {data.subscriptionId}
     </p>
   );
 }

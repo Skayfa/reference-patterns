@@ -1,11 +1,9 @@
 import { create } from "@bufbuild/protobuf";
 import { createStandardSchema } from "@bufbuild/protovalidate";
 import { useMutation } from "@connectrpc/connect-query";
-import type { DeepKeys } from "@tanstack/react-form";
 
-import { fieldViolations, serverErrorMap } from "./connect-errors.js";
+import { serverErrorMap } from "./connect-errors.js";
 import { useAppForm } from "./form/use-app-form.js";
-import type { SubscribeRequest } from "./pb/example/v1/newsletter_pb.js";
 import {
   NewsletterService,
   SubscribeRequestSchema,
@@ -17,12 +15,6 @@ import {
 // enforces, with no hand-written mirror.
 const subscribeValidator = createStandardSchema(SubscribeRequestSchema);
 
-// Runtime-checked narrowing backed by the proto descriptor: a violation
-// path is a form field exactly when it is a field of the request message,
-// so this predicate cannot drift from the schema.
-const isSubscribeField = (path: string): path is DeepKeys<SubscribeRequest> =>
-  SubscribeRequestSchema.fields.some((field) => field.localName === path);
-
 export function SubscribeForm() {
   // connect-query wires the mutation to the method descriptor: no
   // mutationFn, no client prop — the transport comes from TransportProvider.
@@ -32,40 +24,29 @@ export function SubscribeForm() {
   // (created empty here), so the validator and the RPC share one shape.
   const form = useAppForm({
     defaultValues: create(SubscribeRequestSchema),
-    validators: { onChange: subscribeValidator },
-    onSubmit: async ({ value, formApi }) => {
-      try {
-        await mutation.mutateAsync(value);
-      } catch (error) {
-        // Server Violations land under their fields (errorMap.onServer):
-        // the framework clears that cause on the user's next edit, so
-        // canSubmit recovers. Every other failure stays in TanStack
-        // Query's mutation state, which never gates canSubmit — no
-        // deadlock on either path.
-        for (const [path, message] of Object.entries(fieldViolations(error))) {
-          if (isSubscribeField(path)) {
-            formApi.setFieldMeta(path, (meta) => ({
-              ...meta,
-              errorMap: { ...meta.errorMap, onServer: message },
-              // "form" marks the error as form-sourced, which is what lets
-              // the form's validation cycle clear it on the next edit.
-              errorSourceMap: { ...meta.errorSourceMap, onServer: "form" },
-            }));
-          }
+    validators: {
+      onChange: subscribeValidator,
+      // TanStack Form's documented server-error pattern: the submit-time
+      // validator returns { form, fields } and the framework distributes
+      // the field entries onto their fields (dotted paths included) —
+      // which is exactly the shape serverErrorMap builds from the RPC's
+      // Violations details. Errors refresh on the next submit; the submit
+      // button stays clickable (aria-disabled), so retrying is always
+      // possible.
+      onSubmitAsync: async ({ value }) => {
+        try {
+          await mutation.mutateAsync(value);
+          return null;
+        } catch (error) {
+          return serverErrorMap(error);
         }
-      }
+      },
     },
   });
 
   if (mutation.isSuccess) {
     return <p>Subscribed! Your id: {mutation.data.subscriptionId}</p>;
   }
-
-  // form: a code-mapped message for non-field failures, undefined when the
-  // violations already point at fields (no redundant global alert).
-  const serverError = mutation.error
-    ? serverErrorMap(mutation.error)
-    : undefined;
 
   return (
     <form.AppForm>
@@ -80,7 +61,7 @@ export function SubscribeForm() {
 
         <form.SubmitButton label="Subscribe" pendingLabel="Subscribing…" />
 
-        {serverError?.form ? <p role="alert">{serverError.form}</p> : null}
+        <form.FormError />
       </form.Form>
     </form.AppForm>
   );

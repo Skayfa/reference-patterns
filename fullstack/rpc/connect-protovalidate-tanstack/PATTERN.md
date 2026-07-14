@@ -3,7 +3,7 @@ name: connect-protovalidate-tanstack
 language: fullstack
 category: rpc
 tags: [go, connectrpc, protobuf, protovalidate, buf, react, tanstack-form, tanstack-query, zod]
-description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, and code-driven error handling (server violations mapped back onto form fields, transient-only retries, panic shield) — tested on both sides without a network
+description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, and code-driven error handling caught at the right place (Suspense + error boundary for reads, server violations onto form fields via onSubmitAsync, transient-only retries, panic shield) — tested on both sides without a network
 test: (cd server && go test ./...) && (cd web && pnpm test)
 ---
 
@@ -59,13 +59,24 @@ or mirrors it:
 - **Error handling is code-driven end to end** (`web/src/connect-errors.ts`):
   the RPC code is the error API. Server side, panics are shielded
   (`connect.WithRecover` → logged, generic `internal`) and handlers only
-  return `connect.NewError` with deliberate codes. Client side, failures
-  split by ownership: protovalidate `Violations` from the error details
-  land **under their form fields** (`formApi.setFieldMeta` →
-  `errorMap.onServer`), everything else stays in TanStack Query's mutation
-  state and renders as one code-mapped user message (`userMessage`) — raw
-  RPC messages never reach the DOM. `createQueryClient` retries transient
-  codes only, queries only.
+  return `connect.NewError` with deliberate codes. Client side, each kind
+  of failure is caught at its intended place, following the official
+  TanStack patterns:
+  - **Reads** (`web/src/rpc-boundary.tsx`): components use
+    `useSuspenseQuery` and render only the happy path — loading surfaces
+    at `<Suspense>`, failures at the error boundary. `RpcBoundary` is the
+    documented composition (`QueryErrorResetBoundary` +
+    `react-error-boundary`, `onReset={reset}` so Retry actually
+    refetches), written once for the whole app.
+  - **Writes** (`web/src/subscribe-form.tsx`): the `onSubmitAsync`
+    validator runs the mutation and returns TanStack Form's documented
+    `{ form, fields }` error shape — which is exactly what
+    `serverErrorMap` builds from the RPC's `Violations` details, dotted
+    field paths included. The framework distributes field entries onto
+    the fields; `<form.FormError />` renders the form-level part.
+  - Raw RPC messages never reach the DOM (`userMessage` maps codes to
+    copy), and `createQueryClient` retries transient codes only, queries
+    only.
 - **Tests on both sides, no network**:
   `server/main_test.go` drives the real handler stack through `httptest`
   and asserts the validation table; `web/tests/subscribe-form.test.tsx`
@@ -75,18 +86,21 @@ or mirrors it:
 
 ## Key points
 
-- **Split server failures by ownership — fully typed, no deadlock**:
-  field violations go on each field's `errorMap.onServer` via
-  `formApi.setFieldMeta`, together with `errorSourceMap: "form"` — that
-  source marker is what lets TanStack Form's validation cycle auto-clear
-  the error (and recover `canSubmit`) on the user's next edit. Non-field
-  failures stay in the mutation state, which never gates `canSubmit`. The
-  violation path is narrowed with a runtime predicate backed by the proto
-  descriptor (`SubscribeRequestSchema.fields`), so no cast anywhere.
-  Rejected alternatives: `onSubmitAsync` returns only re-validate on the
-  next submit (a deadlock behind a `disabled={!canSubmit}` button), and
-  `form.setErrorMap({ onServer })` distributes `{form, fields}` at runtime
-  but form-core types that slot after a validator that cannot be declared.
+- **Error boundaries are for reads, not forms**: a boundary unmounts the
+  subtree it guards — on a form that means losing the user's input, and a
+  boundary can never place a violation next to its field. So queries throw
+  declaratively (suspense + `RpcBoundary`), while submit errors stay local
+  through the documented `onSubmitAsync` → `{ form, fields }` channel.
+- **`aria-disabled`, not `disabled`, on the submit button** (per the
+  TanStack Form docs: disabled buttons are not accessible). This is also
+  what makes the server-error flow sound: submit-cause errors only refresh
+  on the next submit, and the button staying clickable is what allows that
+  next submit — a hard-disabled button would deadlock behind
+  `canSubmit === false`.
+- **`useSuspenseQuery` degrades gracefully**: its default `throwOnError`
+  only throws to the boundary when there is no cached data — with a
+  previous success in cache, a failed refetch keeps rendering the stale
+  data instead of nuking the page.
 - **Retry what is transient, nothing else**: network failures surface as
   `Code.Unknown` in connect-es, so transient = `Unavailable`,
   `DeadlineExceeded`, `ResourceExhausted`, `Unknown` — retried twice, for

@@ -21,6 +21,7 @@ catalog:
   react: ^19.2.0
   react-call: ^2.0.2
   react-dom: ^19.2.0
+  react-error-boundary: ^6.1.0
   typescript: ^5.7.0
   vitest: ^4.1.0
   zod: ^4.4.0
