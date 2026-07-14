@@ -59,12 +59,13 @@ or mirrors it:
 - **Error handling is code-driven end to end** (`web/src/connect-errors.ts`):
   the RPC code is the error API. Server side, panics are shielded
   (`connect.WithRecover` → logged, generic `internal`) and handlers only
-  return `connect.NewError` with deliberate codes. Client side,
-  `serverErrorMap` splits every failure: protovalidate `Violations` from
-  the error details land **under their form fields** via
-  `form.setErrorMap({ onServer: ... })`, everything else becomes one
-  code-mapped user message (`userMessage`) — raw RPC messages never reach
-  the DOM. `createQueryClient` retries transient codes only, queries only.
+  return `connect.NewError` with deliberate codes. Client side, failures
+  split by ownership: protovalidate `Violations` from the error details
+  land **under their form fields** (`formApi.setFieldMeta` →
+  `errorMap.onServer`), everything else stays in TanStack Query's mutation
+  state and renders as one code-mapped user message (`userMessage`) — raw
+  RPC messages never reach the DOM. `createQueryClient` retries transient
+  codes only, queries only.
 - **Tests on both sides, no network**:
   `server/main_test.go` drives the real handler stack through `httptest`
   and asserts the validation table; `web/tests/subscribe-form.test.tsx`
@@ -74,15 +75,18 @@ or mirrors it:
 
 ## Key points
 
-- **Server errors belong to the `onServer` cause, not `onSubmitAsync`**:
-  TanStack Form injects a no-op validator for the server cause on every
-  change/blur cycle, so `onServer` errors auto-clear as soon as the user
-  edits and `canSubmit` recovers. Errors returned from `onSubmitAsync`
-  (cause `onSubmit`) only re-validate on the next submit — with a
-  `disabled={!canSubmit}` button that is a deadlock. (The `as never` cast
-  exists because form-core types the onServer slot after a validator that
-  cannot be declared; the runtime distributes `{form, fields}` on any
-  cause.)
+- **Split server failures by ownership — fully typed, no deadlock**:
+  field violations go on each field's `errorMap.onServer` via
+  `formApi.setFieldMeta`, together with `errorSourceMap: "form"` — that
+  source marker is what lets TanStack Form's validation cycle auto-clear
+  the error (and recover `canSubmit`) on the user's next edit. Non-field
+  failures stay in the mutation state, which never gates `canSubmit`. The
+  violation path is narrowed with a runtime predicate backed by the proto
+  descriptor (`SubscribeRequestSchema.fields`), so no cast anywhere.
+  Rejected alternatives: `onSubmitAsync` returns only re-validate on the
+  next submit (a deadlock behind a `disabled={!canSubmit}` button), and
+  `form.setErrorMap({ onServer })` distributes `{form, fields}` at runtime
+  but form-core types that slot after a validator that cannot be declared.
 - **Retry what is transient, nothing else**: network failures surface as
   `Code.Unknown` in connect-es, so transient = `Unavailable`,
   `DeadlineExceeded`, `ResourceExhausted`, `Unknown` — retried twice, for
