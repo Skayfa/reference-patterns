@@ -16,6 +16,10 @@
 
 - [buf-setup](https://github.com/Skayfa/reference-patterns/blob/main/protobuf/buf-setup/PATTERN.md): Minimal buf v2 setup — module layout, STANDARD lint, breaking-change detection, remote-plugin codegen
 
+## Rust
+
+- [ollama-tool-calling](https://github.com/Skayfa/reference-patterns/blob/main/rust/agent/ollama-tool-calling/PATTERN.md): A minimal AI agent with tool-calling in Rust against a local (free) Ollama model — the tool-use loop behind a trait, tested deterministically with a scripted mock (no network, no model)
+
 ## TypeScript
 
 - [pnpm-turbo-structure](https://github.com/Skayfa/reference-patterns/blob/main/typescript/monorepo/pnpm-turbo-structure/PATTERN.md): How to structure a pnpm + Turborepo monorepo — apps/packages/tooling split, shared configs as packages, task graph

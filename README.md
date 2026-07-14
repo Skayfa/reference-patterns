@@ -18,9 +18,10 @@ consumed from other projects through MCP.
 - Patterns never depend on each other.
 - **Each language directory is a workspace** managed by its native tool:
   `pnpm-workspace.yaml` (with a `catalog:` as the single place to bump
-  TypeScript dependency versions) and `go.work`. One root `pnpm install`
-  covers every TypeScript pattern; bumping a catalog version + running
-  `./scripts/test-all.sh` re-verifies the whole reference at once.
+  TypeScript dependency versions), `go.work`, and per-crate Cargo for Rust.
+  One root `pnpm install` covers every TypeScript pattern; bumping a catalog
+  version + running `./scripts/test-all.sh` re-verifies the whole reference
+  at once. Toolchains needed locally: node + pnpm, go, buf, rust + cargo.
 
 ## Consume via MCP (GitMCP)
 

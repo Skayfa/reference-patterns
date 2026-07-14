@@ -6,9 +6,9 @@ Polyglot pattern reference — no single toolchain. Each pattern under
 `<language>/<category>/<slug>/` keeps its own manifest (`package.json`,
 `go.mod`, `buf.yaml`, ...), and each language directory is a workspace
 managed by its native tool: pnpm workspace + `catalog:` for `typescript/`
-(all shared versions live in `pnpm-workspace.yaml`), `go.work` for `go/`.
-Required locally: node + pnpm, go, buf. Everything (code, comments, docs)
-is in English.
+(all shared versions live in `pnpm-workspace.yaml`), `go.work` for `go/`,
+Cargo per-crate for `rust/`. Required locally: node + pnpm, go, buf, and
+rust + cargo (via rustup). Everything (code, comments, docs) is in English.
 
 ## Comment tester
 

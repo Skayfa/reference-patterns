@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 gen/
+target/
 .DS_Store
 *.log
 go.work.sum
