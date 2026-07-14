@@ -3,7 +3,7 @@ name: connect-protovalidate-tanstack
 language: fullstack
 category: rpc
 tags: [go, connectrpc, protobuf, protovalidate, buf, react, tanstack-form, tanstack-query, zod]
-description: End-to-end typed RPC with validation — Go Connect server enforcing protovalidate rules declared in the proto, React front with TanStack Form (writes) and TanStack Query over HTTP GET (cacheable reads), tested on both sides without a network
+description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, tested on both sides without a network
 test: (cd server && go test ./...) && (cd web && pnpm test)
 ---
 
@@ -36,12 +36,15 @@ or mirrors it:
   app-wide `useAppForm` with pre-bound components (`TextField`,
   `SubmitButton`) written once — value wiring, blur/change handlers and
   error display live in the field component, not in every form.
-- **`web/src/subscribe-form.tsx`** — the write side, now fully
-  declarative: `<form.AppField name="email">` +
-  `<field.TextField label="Email" />`. TanStack Form owns input state and
-  instant feedback (zod schema mirroring the proto rules), TanStack Query
-  owns the network state (`useMutation` on the generated client), and the
-  generated types make the payload compile-time-checked.
+- **`web/src/subscribe-form.tsx`** — the write side, fully declarative:
+  `<form.AppField name="email">` + `<field.TextField label="Email" />`.
+  TanStack Form owns input state, TanStack Query owns the network state
+  (`useMutation` on the generated client). **Validation is unified**:
+  `createStandardSchema(SubscribeRequestSchema)` (protovalidate-es)
+  evaluates the proto's own CEL rules in the browser as a Standard Schema
+  validator, and the form's values are the proto message itself
+  (`defaultValues: create(SubscribeRequestSchema)`) — no hand-written
+  mirror schema anywhere.
 - **`web/src/subscription-status.tsx`** — the read side: `useQuery` on
   `GetSubscription`, which the proto declares `NO_SIDE_EFFECTS` — so a
   transport created with `useHttpGet: true` sends it as a plain **HTTP
@@ -65,9 +68,16 @@ or mirrors it:
   circular imports; `withForm` (exported alongside `useAppForm`) splits
   large forms into typed fragments.
 
-- **The server is the source of truth**; the zod schema exists only for
-  instant field-level UX. The last test proves the flow still works when a
-  server rule is missing client-side: the ConnectError surfaces in the form.
+- **One rule set, two runtimes**: the browser evaluates the exact rules
+  (and produces the same messages) the Go interceptor enforces, because
+  both read them from the proto. The server remains authoritative — the
+  last form test proves a server-side rejection still surfaces cleanly
+  when the client didn't catch it (rules can drift only until the next
+  `buf generate`).
+- The unification costs a CEL evaluator in the bundle
+  (`@bufbuild/protovalidate`); for tiny forms a hand-written schema may be
+  lighter, but every rule then exists twice. Custom error messages belong
+  in the proto rules, so both sides stay in sync there too.
 - `createRouterTransport` beats mocking `fetch`: you test against actual
   Connect (de)serialization, codes and details, and the same client code
   runs in tests and production (the client is injected as a prop).

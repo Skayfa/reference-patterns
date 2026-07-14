@@ -1,9 +1,17 @@
+import { create } from "@bufbuild/protobuf";
+import { createStandardSchema } from "@bufbuild/protovalidate";
 import type { Client } from "@connectrpc/connect";
 import { useMutation } from "@tanstack/react-query";
 
 import { useAppForm } from "./form/use-app-form.js";
 import type { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
-import { subscribeSchema } from "./schema.js";
+import { SubscribeRequestSchema } from "./pb/example/v1/newsletter_pb.js";
+
+// Unified validation: the protovalidate rules annotated in newsletter.proto
+// travel inside the generated schema, and createStandardSchema evaluates
+// them in the browser — the exact rules (and messages) the Go interceptor
+// enforces, with no hand-written mirror.
+const subscribeValidator = createStandardSchema(SubscribeRequestSchema);
 
 interface SubscribeFormProps {
   /** Injected so tests can pass a client backed by an in-memory transport. */
@@ -17,10 +25,11 @@ export function SubscribeForm({ client }: SubscribeFormProps) {
       client.subscribe(input),
   });
 
-  // ...TanStack Form owns the input state and client-side validation.
+  // ...TanStack Form owns the input state; its values ARE the proto message
+  // (created empty here), so the validator and the RPC share one shape.
   const form = useAppForm({
-    defaultValues: { email: "", name: "" },
-    validators: { onChange: subscribeSchema },
+    defaultValues: create(SubscribeRequestSchema),
+    validators: { onChange: subscribeValidator },
     onSubmit: async ({ value }) => {
       // Swallow the rejection: TanStack Query owns the error state and the
       // component renders it from mutation.isError. Awaiting still keeps

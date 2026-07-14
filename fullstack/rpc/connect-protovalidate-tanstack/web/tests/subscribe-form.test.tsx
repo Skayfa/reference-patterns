@@ -41,10 +41,12 @@ describe("SubscribeForm", () => {
     await user.type(screen.getByLabelText("Email"), "not-an-email");
     await user.type(screen.getByLabelText("Name"), "A");
 
-    expect(screen.getByText("Enter a valid email address")).toBeInTheDocument();
+    // protovalidate's own messages — the same ones the Go server returns,
+    // since both sides evaluate the same rules from newsletter.proto.
     expect(
-      screen.getByText("Name must be at least 2 characters"),
+      screen.getByText("must be a valid email address"),
     ).toBeInTheDocument();
+    expect(screen.getByText("must be at least 2 characters")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Subscribe" })).toBeDisabled();
     expect(subscribe).not.toHaveBeenCalled();
   });

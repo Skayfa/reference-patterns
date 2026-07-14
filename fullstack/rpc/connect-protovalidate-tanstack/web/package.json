@@ -7,13 +7,13 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "catalog:",
+    "@bufbuild/protovalidate": "catalog:",
     "@connectrpc/connect": "catalog:",
     "@connectrpc/connect-web": "catalog:",
     "@tanstack/react-form": "catalog:",
     "@tanstack/react-query": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "zod": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "catalog:",
