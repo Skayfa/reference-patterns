@@ -1,0 +1,18 @@
+# reference-patterns
+
+> Personal reference of implementation and testing patterns across languages.
+> Each pattern is a self-contained, runnable example documented in its PATTERN.md.
+
+## Go
+
+- [table-driven-tests](https://github.com/Skayfa/reference-patterns/blob/main/go/testing/table-driven-tests/PATTERN.md): Idiomatic Go table-driven tests — named map cases, parallel subtests, t.Helper assertion helpers
+
+## Protobuf
+
+- [buf-setup](https://github.com/Skayfa/reference-patterns/blob/main/protobuf/buf-setup/PATTERN.md): Minimal buf v2 setup — module layout, STANDARD lint, breaking-change detection, remote-plugin codegen
+
+## TypeScript
+
+- [pnpm-turbo-structure](https://github.com/Skayfa/reference-patterns/blob/main/typescript/monorepo/pnpm-turbo-structure/PATTERN.md): How to structure a pnpm + Turborepo monorepo — apps/packages/tooling split, shared configs as packages, task graph
+- [vitest-unit-mocking](https://github.com/Skayfa/reference-patterns/blob/main/typescript/testing/vitest-unit-mocking/PATTERN.md): Unit testing with Vitest — module mocks (vi.mock), injected mocks (vi.fn), fixture builders and fake timers
+

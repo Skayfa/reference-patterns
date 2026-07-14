@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+// Versioned package: STANDARD lint requires the directory (example/v1)
+// to match the package, and the package to end with a version suffix.
+package example.v1;
+
+option go_package = "github.com/Skayfa/reference-patterns/protobuf/buf-setup/gen/example/v1;examplev1";
+
+// UserService follows STANDARD naming: `Service` suffix, and one
+// dedicated request/response message pair per RPC (never share them —
+// it makes fields impossible to evolve independently).
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message User {
+  string id = 1;
+  string display_name = 2;
+  string email = 3;
+}
