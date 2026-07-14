@@ -14,5 +14,6 @@
 ## TypeScript
 
 - [pnpm-turbo-structure](https://github.com/Skayfa/reference-patterns/blob/main/typescript/monorepo/pnpm-turbo-structure/PATTERN.md): How to structure a pnpm + Turborepo monorepo — apps/packages/tooling split, shared configs as packages, task graph
+- [react-call-confirm](https://github.com/Skayfa/reference-patterns/blob/main/typescript/react/react-call-confirm/PATTERN.md): Awaitable UI with react-call — a Confirm dialog you await like a function, and how to test promise-resolving components with Testing Library
 - [vitest-unit-mocking](https://github.com/Skayfa/reference-patterns/blob/main/typescript/testing/vitest-unit-mocking/PATTERN.md): Unit testing with Vitest — module mocks (vi.mock), injected mocks (vi.fn), fixture builders and fake timers
 
