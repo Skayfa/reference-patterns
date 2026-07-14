@@ -9,6 +9,7 @@
     "@bufbuild/protobuf": "catalog:",
     "@bufbuild/protovalidate": "catalog:",
     "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-query": "catalog:",
     "@connectrpc/connect-web": "catalog:",
     "@tanstack/react-form": "catalog:",
     "@tanstack/react-query": "catalog:",

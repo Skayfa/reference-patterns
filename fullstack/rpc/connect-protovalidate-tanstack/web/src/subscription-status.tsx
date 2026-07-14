@@ -1,26 +1,20 @@
-import type { Client } from "@connectrpc/connect";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@connectrpc/connect-query";
 
-import type { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
-
-interface SubscriptionStatusProps {
-  client: Client<typeof NewsletterService>;
-  subscriptionId: string;
-}
+import { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
 
 /**
- * The read side: TanStack Query owns caching/retries, and because
- * GetSubscription is NO_SIDE_EFFECTS, a transport created with
- * `useHttpGet: true` sends it as a plain HTTP GET — cacheable by the
- * browser and any CDN in front of the API.
+ * The read side: connect-query derives the cache key from the method
+ * descriptor + input (no manual queryKey), and because GetSubscription is
+ * NO_SIDE_EFFECTS, a transport created with `useHttpGet: true` sends it as
+ * a plain HTTP GET — cacheable by the browser and any CDN in front.
  */
 export function SubscriptionStatus({
-  client,
   subscriptionId,
-}: SubscriptionStatusProps) {
-  const query = useQuery({
-    queryKey: ["subscription", subscriptionId],
-    queryFn: () => client.getSubscription({ subscriptionId }),
+}: {
+  subscriptionId: string;
+}) {
+  const query = useQuery(NewsletterService.method.getSubscription, {
+    subscriptionId,
   });
 
   if (query.isPending) return <p>Loading subscription…</p>;

@@ -33,22 +33,27 @@ or mirrors it:
   handler code runs. Handlers contain only business logic.
 - **`web/src/form/`** — TanStack Form's recommended **composition**
   pattern: `createFormHookContexts` + `createFormHook` produce an
-  app-wide `useAppForm` with pre-bound components (`TextField`,
-  `SubmitButton`) written once — value wiring, blur/change handlers and
-  error display live in the field component, not in every form.
+  app-wide `useAppForm` with pre-bound components (`Form`, `TextField`,
+  `SubmitButton`) written once — the `<form>` submit wiring, value/blur/
+  change handlers and error display live in the shared components, not in
+  every form.
 - **`web/src/subscribe-form.tsx`** — the write side, fully declarative:
   `<form.AppField name="email">` + `<field.TextField label="Email" />`.
-  TanStack Form owns input state, TanStack Query owns the network state
-  (`useMutation` on the generated client). **Validation is unified**:
+  TanStack Form owns input state, TanStack Query owns the network state —
+  through **connect-query** (`useMutation(NewsletterService.method.subscribe)`):
+  no `mutationFn`, no client prop, the transport comes from
+  `TransportProvider`. **Validation is unified**:
   `createStandardSchema(SubscribeRequestSchema)` (protovalidate-es)
   evaluates the proto's own CEL rules in the browser as a Standard Schema
   validator, and the form's values are the proto message itself
   (`defaultValues: create(SubscribeRequestSchema)`) — no hand-written
   mirror schema anywhere.
-- **`web/src/subscription-status.tsx`** — the read side: `useQuery` on
-  `GetSubscription`, which the proto declares `NO_SIDE_EFFECTS` — so a
-  transport created with `useHttpGet: true` sends it as a plain **HTTP
-  GET**, cacheable by browsers and CDNs. `server/main_test.go` proves the
+- **`web/src/subscription-status.tsx`** — the read side:
+  `useQuery(NewsletterService.method.getSubscription, input)` —
+  connect-query derives the cache key from the method descriptor + input,
+  so there is no hand-written `queryKey` to keep unique. The proto declares
+  the RPC `NO_SIDE_EFFECTS`, so a transport created with `useHttpGet: true`
+  sends it as a plain **HTTP GET**, cacheable by browsers and CDNs. `server/main_test.go` proves the
   wire behavior: `Subscribe` travels as POST, `GetSubscription` as GET,
   and protovalidate rules apply to GET requests too.
 - **Tests on both sides, no network**:
@@ -79,8 +84,13 @@ or mirrors it:
   lighter, but every rule then exists twice. Custom error messages belong
   in the proto rules, so both sides stay in sync there too.
 - `createRouterTransport` beats mocking `fetch`: you test against actual
-  Connect (de)serialization, codes and details, and the same client code
-  runs in tests and production (the client is injected as a prop).
+  Connect (de)serialization, codes and details, and the same component code
+  runs in tests and production — only the `TransportProvider` value changes
+  (see `tests/test-utils.tsx`, which also passes partial service impls:
+  each test provides only the methods it needs).
+- No generated query hooks needed: connect-es v2 service descriptors carry
+  their methods (`NewsletterService.method.subscribe`), which connect-query
+  consumes directly — one less codegen plugin.
 - `mutateAsync` + `.catch(() => undefined)` in `onSubmit`: TanStack Query
   owns the error state (rendered from `mutation.isError`), while awaiting
   keeps `isSubmitting` accurate — without the catch, every server rejection

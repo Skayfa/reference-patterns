@@ -1,11 +1,12 @@
 import { create } from "@bufbuild/protobuf";
 import { createStandardSchema } from "@bufbuild/protovalidate";
-import type { Client } from "@connectrpc/connect";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation } from "@connectrpc/connect-query";
 
 import { useAppForm } from "./form/use-app-form.js";
-import type { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
-import { SubscribeRequestSchema } from "./pb/example/v1/newsletter_pb.js";
+import {
+  NewsletterService,
+  SubscribeRequestSchema,
+} from "./pb/example/v1/newsletter_pb.js";
 
 // Unified validation: the protovalidate rules annotated in newsletter.proto
 // travel inside the generated schema, and createStandardSchema evaluates
@@ -13,19 +14,12 @@ import { SubscribeRequestSchema } from "./pb/example/v1/newsletter_pb.js";
 // enforces, with no hand-written mirror.
 const subscribeValidator = createStandardSchema(SubscribeRequestSchema);
 
-interface SubscribeFormProps {
-  /** Injected so tests can pass a client backed by an in-memory transport. */
-  client: Client<typeof NewsletterService>;
-}
+export function SubscribeForm() {
+  // connect-query wires the mutation to the method descriptor: no
+  // mutationFn, no client prop — the transport comes from TransportProvider.
+  const mutation = useMutation(NewsletterService.method.subscribe);
 
-export function SubscribeForm({ client }: SubscribeFormProps) {
-  // TanStack Query owns the network state (pending/error/success)...
-  const mutation = useMutation({
-    mutationFn: (input: { email: string; name: string }) =>
-      client.subscribe(input),
-  });
-
-  // ...TanStack Form owns the input state; its values ARE the proto message
+  // TanStack Form owns the input state; its values ARE the proto message
   // (created empty here), so the validator and the RPC share one shape.
   const form = useAppForm({
     defaultValues: create(SubscribeRequestSchema),
@@ -43,29 +37,24 @@ export function SubscribeForm({ client }: SubscribeFormProps) {
   }
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void form.handleSubmit();
-      }}
-    >
-      <form.AppField name="email">
-        {(field) => <field.TextField label="Email" />}
-      </form.AppField>
+    <form.AppForm>
+      <form.Form>
+        <form.AppField name="email">
+          {(field) => <field.TextField label="Email" />}
+        </form.AppField>
 
-      <form.AppField name="name">
-        {(field) => <field.TextField label="Name" />}
-      </form.AppField>
+        <form.AppField name="name">
+          {(field) => <field.TextField label="Name" />}
+        </form.AppField>
 
-      <form.AppForm>
         <form.SubmitButton label="Subscribe" pendingLabel="Subscribing…" />
-      </form.AppForm>
 
-      {mutation.isError ? (
-        // Server-side rejections (protovalidate) land here with the
-        // violated field in the message.
-        <p role="alert">{mutation.error.message}</p>
-      ) : null}
-    </form>
+        {mutation.isError ? (
+          // Server-side rejections (protovalidate) land here with the
+          // violated field in the message.
+          <p role="alert">{mutation.error.message}</p>
+        ) : null}
+      </form.Form>
+    </form.AppForm>
   );
 }
