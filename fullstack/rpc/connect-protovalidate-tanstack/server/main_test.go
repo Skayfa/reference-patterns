@@ -9,8 +9,10 @@ import (
 	"sync"
 	"testing"
 
+	validatepb "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"connectrpc.com/connect"
 
+	"github.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/internal/newsletter"
 	examplev1 "github.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/pb/example/v1"
 	"github.com/Skayfa/reference-patterns/fullstack/rpc/connect-protovalidate-tanstack/server/pb/example/v1/examplev1connect"
 )
@@ -52,7 +54,7 @@ func newTestClient(t *testing.T, svc examplev1connect.NewsletterServiceHandler, 
 
 func TestSubscribe(t *testing.T) {
 	t.Parallel()
-	client, _ := newTestClient(t, newNewsletterServer())
+	client, _ := newTestClient(t, newsletter.NewServer())
 	ctx := context.Background()
 
 	t.Run("valid request returns a subscription id", func(t *testing.T) {
@@ -65,6 +67,40 @@ func TestSubscribe(t *testing.T) {
 		}
 		if got := res.Msg.GetSubscriptionId(); !strings.HasPrefix(got, "sub_") {
 			t.Errorf("subscription id = %q, want sub_ prefix", got)
+		}
+	})
+
+	t.Run("duplicate email is already_exists with an email violation", func(t *testing.T) {
+		first := &examplev1.SubscribeRequest{Email: "dup@example.com", Name: "Ada"}
+		if _, err := client.Subscribe(ctx, connect.NewRequest(first)); err != nil {
+			t.Fatalf("first subscribe failed: %v", err)
+		}
+
+		_, err := client.Subscribe(ctx, connect.NewRequest(first))
+		if code := connect.CodeOf(err); code != connect.CodeAlreadyExists {
+			t.Fatalf("code = %v, want already_exists", code)
+		}
+
+		// The business rejection carries the same Violations detail shape
+		// as protovalidate, pointing at the email field — clients map it
+		// onto the form field with zero extra code.
+		var connectErr *connect.Error
+		if !errors.As(err, &connectErr) {
+			t.Fatal("expected a *connect.Error")
+		}
+		var violation *validatepb.Violation
+		for _, detail := range connectErr.Details() {
+			if msg, valueErr := detail.Value(); valueErr == nil {
+				if violations, ok := msg.(*validatepb.Violations); ok && len(violations.GetViolations()) > 0 {
+					violation = violations.GetViolations()[0]
+				}
+			}
+		}
+		if violation == nil {
+			t.Fatal("expected a Violations error detail")
+		}
+		if got := violation.GetField().GetElements()[0].GetFieldName(); got != "email" {
+			t.Errorf("violation field = %q, want email", got)
 		}
 	})
 
@@ -116,12 +152,12 @@ func TestGetSubscription(t *testing.T) {
 	t.Parallel()
 	// WithHTTPGet turns NO_SIDE_EFFECTS methods into HTTP GETs; other
 	// methods (Subscribe) keep travelling as POST.
-	client, rec := newTestClient(t, newNewsletterServer(), connect.WithHTTPGet())
+	client, rec := newTestClient(t, newsletter.NewServer(), connect.WithHTTPGet())
 	ctx := context.Background()
 
 	t.Run("reads back over HTTP GET what Subscribe stored over POST", func(t *testing.T) {
 		created, err := client.Subscribe(ctx, connect.NewRequest(&examplev1.SubscribeRequest{
-			Email: "grace@example.com",
+			Email: "grace-get@example.com",
 			Name:  "Grace",
 		}))
 		if err != nil {
@@ -140,7 +176,7 @@ func TestGetSubscription(t *testing.T) {
 		if got := rec.last(t); got != http.MethodGet {
 			t.Errorf("GetSubscription travelled as %s, want GET", got)
 		}
-		if res.Msg.GetEmail() != "grace@example.com" || res.Msg.GetName() != "Grace" {
+		if res.Msg.GetEmail() != "grace-get@example.com" || res.Msg.GetName() != "Grace" {
 			t.Errorf("got %q/%q, want stored subscription", res.Msg.GetEmail(), res.Msg.GetName())
 		}
 	})

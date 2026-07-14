@@ -27,10 +27,21 @@ or mirrors it:
   (`server/pb`, plugins `protocolbuffers/go` + `connectrpc/go`) and the
   typed TS client (`web/src/pb`, plugin `bufbuild/es`). Generated code is
   committed so the pattern runs as-is.
-- **`server/main.go`** — a Connect server where validation is an
-  interceptor (`connectrpc.com/validate`): invalid requests are rejected
-  with `invalid_argument` + structured `Violations` details before any
-  handler code runs. Handlers contain only business logic.
+- **`server/`** — business logic and wiring are separate packages:
+  `internal/newsletter` implements the service and knows nothing about
+  transport; `main.go` is the **composition root** — the shared
+  `defaultHandlerOptions()` (validate interceptor + panic recover) that
+  every future service mounts with, the mux, and an `http.Server` with
+  `ReadHeaderTimeout` + graceful shutdown (`signal.NotifyContext` →
+  `Shutdown`). Validation is an interceptor (`connectrpc.com/validate`):
+  invalid requests are rejected with `invalid_argument` + structured
+  `Violations` details before any handler code runs.
+- **Business errors target fields too** (`internal/newsletter`,
+  `fieldViolation`): a rule protovalidate cannot express — email
+  uniqueness — answers `already_exists` carrying the same `Violations`
+  detail shape, pointing at the `email` field. The frontend maps it onto
+  the form field with zero extra code, because business rejections reuse
+  the exact channel rule violations travel on.
 - **`web/src/form/`** — TanStack Form's recommended **composition**
   pattern: `createFormHookContexts` + `createFormHook` produce an
   app-wide `useAppForm` with pre-bound components (`Form`, `TextField`,
@@ -114,6 +125,13 @@ or mirrors it:
   `unknown` WITH its message** — always wrap with `connect.NewError` and a
   deliberate code, and keep `WithRecover` so a panic answers a generic
   `internal` instead of leaking internals.
+- **Deliberately not done, to stay proportionate**: no repository
+  interface or DI container (the in-memory map is a stand-in — introduce
+  persistence at the composition root when it becomes real, and an
+  interface only once there are two implementations), no config layer
+  (one `ADDR` env var), no logging/metrics interceptors (out of scope
+  here), no CORS middleware (documented above, add `connectrpc.com/cors`
+  when a browser origin actually calls the server).
 - **Form composition scales, render props don't**: one `TextField` bound
   via `useFieldContext` replaces the per-field boilerplate in every form.
   New forms only declare fields and labels; growing the app's form
