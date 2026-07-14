@@ -79,8 +79,14 @@ func (s *Server) GetSubscription(
 	}), nil
 }
 
-// fieldViolation builds a connect error carrying the same Violations
-// detail protovalidate emits, pointing at a specific request field.
+// fieldViolation makes a business rejection addressable to one request
+// field, by attaching the same buf.validate.Violations detail the
+// protovalidate interceptor emits. Clients that already parse violations
+// (see web/src/connect-errors.ts) place the message under the right form
+// field with zero extra code; clients that don't still get code+message.
+// Without the detail, the frontend could only show a generic form-level
+// error. Reuse it for any field-bound rule protovalidate cannot express
+// (uniqueness, quotas, dangling references, ...).
 func fieldViolation(code connect.Code, field, message string) *connect.Error {
 	err := connect.NewError(code, fmt.Errorf("%s: %s", field, message))
 	detail, detailErr := connect.NewErrorDetail(&validatepb.Violations{
