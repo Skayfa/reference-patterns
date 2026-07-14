@@ -1,7 +1,7 @@
 import type { Client } from "@connectrpc/connect";
-import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 
+import { useAppForm } from "./form/use-app-form.js";
 import type { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
 import { subscribeSchema } from "./schema.js";
 
@@ -18,7 +18,7 @@ export function SubscribeForm({ client }: SubscribeFormProps) {
   });
 
   // ...TanStack Form owns the input state and client-side validation.
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: { email: "", name: "" },
     validators: { onChange: subscribeSchema },
     onSubmit: async ({ value }) => {
@@ -40,49 +40,17 @@ export function SubscribeForm({ client }: SubscribeFormProps) {
         void form.handleSubmit();
       }}
     >
-      <form.Field name="email">
-        {(field) => (
-          <label>
-            Email
-            <input
-              type="text"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(event) => field.handleChange(event.target.value)}
-            />
-            {field.state.meta.isTouched && !field.state.meta.isValid ? (
-              <em>{field.state.meta.errors[0]?.message}</em>
-            ) : null}
-          </label>
-        )}
-      </form.Field>
+      <form.AppField name="email">
+        {(field) => <field.TextField label="Email" />}
+      </form.AppField>
 
-      <form.Field name="name">
-        {(field) => (
-          <label>
-            Name
-            <input
-              type="text"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(event) => field.handleChange(event.target.value)}
-            />
-            {field.state.meta.isTouched && !field.state.meta.isValid ? (
-              <em>{field.state.meta.errors[0]?.message}</em>
-            ) : null}
-          </label>
-        )}
-      </form.Field>
+      <form.AppField name="name">
+        {(field) => <field.TextField label="Name" />}
+      </form.AppField>
 
-      <form.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting] as const}
-      >
-        {([canSubmit, isSubmitting]) => (
-          <button type="submit" disabled={!canSubmit || isSubmitting}>
-            {isSubmitting ? "Subscribing…" : "Subscribe"}
-          </button>
-        )}
-      </form.Subscribe>
+      <form.AppForm>
+        <form.SubmitButton label="Subscribe" pendingLabel="Subscribing…" />
+      </form.AppForm>
 
       {mutation.isError ? (
         // Server-side rejections (protovalidate) land here with the

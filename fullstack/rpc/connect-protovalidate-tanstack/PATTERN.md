@@ -31,10 +31,17 @@ or mirrors it:
   interceptor (`connectrpc.com/validate`): invalid requests are rejected
   with `invalid_argument` + structured `Violations` details before any
   handler code runs. Handlers contain only business logic.
-- **`web/src/subscribe-form.tsx`** — the write side: TanStack Form owns
-  input state and instant feedback (zod schema mirroring the proto rules),
-  TanStack Query owns the network state (`useMutation` on the generated
-  client), and the generated types make the payload compile-time-checked.
+- **`web/src/form/`** — TanStack Form's recommended **composition**
+  pattern: `createFormHookContexts` + `createFormHook` produce an
+  app-wide `useAppForm` with pre-bound components (`TextField`,
+  `SubmitButton`) written once — value wiring, blur/change handlers and
+  error display live in the field component, not in every form.
+- **`web/src/subscribe-form.tsx`** — the write side, now fully
+  declarative: `<form.AppField name="email">` +
+  `<field.TextField label="Email" />`. TanStack Form owns input state and
+  instant feedback (zod schema mirroring the proto rules), TanStack Query
+  owns the network state (`useMutation` on the generated client), and the
+  generated types make the payload compile-time-checked.
 - **`web/src/subscription-status.tsx`** — the read side: `useQuery` on
   `GetSubscription`, which the proto declares `NO_SIDE_EFFECTS` — so a
   transport created with `useHttpGet: true` sends it as a plain **HTTP
@@ -49,6 +56,14 @@ or mirrors it:
   for real.
 
 ## Key points
+
+- **Form composition scales, render props don't**: one `TextField` bound
+  via `useFieldContext` replaces the per-field boilerplate in every form.
+  New forms only declare fields and labels; growing the app's form
+  vocabulary means adding a component to `createFormHook`, nothing else.
+  The contexts live in their own file (`form-context.ts`) to avoid
+  circular imports; `withForm` (exported alongside `useAppForm`) splits
+  large forms into typed fragments.
 
 - **The server is the source of truth**; the zod schema exists only for
   instant field-level UX. The last test proves the flow still works when a
