@@ -16,6 +16,11 @@ consumed from other projects through MCP.
 - [llms.txt](./llms.txt) is the generated index of every pattern — this is what
   MCP clients read first.
 - Patterns never depend on each other.
+- **Each language directory is a workspace** managed by its native tool:
+  `pnpm-workspace.yaml` (with a `catalog:` as the single place to bump
+  TypeScript dependency versions) and `go.work`. One root `pnpm install`
+  covers every TypeScript pattern; bumping a catalog version + running
+  `./scripts/test-all.sh` re-verifies the whole reference at once.
 
 ## Consume via MCP (GitMCP)
 
@@ -44,7 +49,9 @@ Exposed tools: `fetch_reference_docs` (returns `llms.txt`),
 2. Fill the frontmatter — `description` is what MCP search matches against;
    `test` is the command `scripts/test-all.sh` runs from the pattern directory
    (`none` for docs-only patterns).
-3. Add the runnable code with its own manifest.
+3. Add the runnable code with its own manifest. TypeScript patterns are picked
+   up by the workspace glob automatically — use `"catalog:"` versions (add new
+   entries to `pnpm-workspace.yaml`) and `test: pnpm test`.
 4. `./scripts/generate-llms.sh` to refresh the index.
 5. `./scripts/test-all.sh` — everything must pass before pushing.
 

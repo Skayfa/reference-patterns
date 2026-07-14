@@ -4,7 +4,7 @@ language: typescript
 category: testing
 tags: [vitest, mocking, fixtures, fake-timers, unit-tests]
 description: Unit testing with Vitest — module mocks (vi.mock), injected mocks (vi.fn), fixture builders and fake timers
-test: pnpm install --silent && pnpm test
+test: pnpm test
 ---
 
 # Vitest unit testing with mocks
@@ -49,5 +49,6 @@ different mocking style.
 ## How to run
 
 ```bash
-pnpm install && pnpm test
+pnpm install   # once, at the repo root (pnpm workspace)
+pnpm test      # from this directory
 ```

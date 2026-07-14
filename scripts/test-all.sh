@@ -5,6 +5,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Workspace installs are hoisted here (single lockfile, one resolution);
+# per-pattern test commands assume dependencies are already in place.
+echo "SETUP pnpm install (workspace)"
+pnpm install --silent
+
 failed=()
 ran=0
 

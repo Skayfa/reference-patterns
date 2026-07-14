@@ -3,9 +3,12 @@
 ## Stack
 
 Polyglot pattern reference — no single toolchain. Each pattern under
-`<language>/<category>/<slug>/` is self-contained with its own manifest
-(`package.json`, `go.mod`, `buf.yaml`, ...). Required locally: node + pnpm,
-go, buf. Everything (code, comments, docs) is in English.
+`<language>/<category>/<slug>/` keeps its own manifest (`package.json`,
+`go.mod`, `buf.yaml`, ...), and each language directory is a workspace
+managed by its native tool: pnpm workspace + `catalog:` for `typescript/`
+(all shared versions live in `pnpm-workspace.yaml`), `go.work` for `go/`.
+Required locally: node + pnpm, go, buf. Everything (code, comments, docs)
+is in English.
 
 ## Comment tester
 
@@ -13,9 +16,15 @@ go, buf. Everything (code, comments, docs) is in English.
 ./scripts/test-all.sh
 ```
 
-Runs every pattern's `test:` command from its `PATTERN.md` frontmatter, in the
-pattern's directory. `test: none` marks a docs-only pattern (skipped). To test
-a single pattern, run its `test:` command from its directory.
+Installs the pnpm workspace once at the root, then runs every pattern's
+`test:` command from its `PATTERN.md` frontmatter, in the pattern's directory.
+`test: none` marks a docs-only pattern (skipped). To test a single pattern,
+run its `test:` command from its directory (after a root `pnpm install` for
+TypeScript patterns).
+
+**Dependency bumps**: edit the `catalog:` in `pnpm-workspace.yaml` (or a
+`go.mod`), then `./scripts/test-all.sh` — it re-verifies every pattern against
+the new versions in one pass.
 
 ## Comment livrer
 
@@ -33,6 +42,10 @@ a single pattern, run its `test:` command from its directory.
 2. Fill frontmatter: `name` (= slug), `language` (= top-level dir), `category`,
    `tags`, `description` (one line, drives MCP search), `test`.
 3. Write the runnable example — self-contained, no cross-pattern imports.
+   TypeScript: the workspace glob (`typescript/*/*`) picks the package up
+   automatically; use `"catalog:"` versions (add new deps to the catalog in
+   `pnpm-workspace.yaml`) and `test: pnpm test`. Go: add the module to
+   `go.work`.
 4. Body: Problem → Solution → Key points (the non-obvious bits) → How to run.
 5. `./scripts/generate-llms.sh` to regenerate the index (commit `llms.txt`).
 6. `./scripts/test-all.sh` must pass.

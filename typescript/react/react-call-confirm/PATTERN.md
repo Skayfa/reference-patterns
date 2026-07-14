@@ -4,7 +4,7 @@ language: typescript
 category: react
 tags: [react, react-call, dialogs, promises, testing-library, vitest]
 description: Awaitable UI with react-call — a Confirm dialog you await like a function, and how to test promise-resolving components with Testing Library
-test: pnpm install --silent && pnpm test
+test: pnpm test
 ---
 
 # Awaitable confirm dialog with react-call
@@ -55,5 +55,6 @@ context — for what is conceptually a single question with an answer.
 ## How to run
 
 ```bash
-pnpm install && pnpm test
+pnpm install   # once, at the repo root (pnpm workspace)
+pnpm test      # from this directory
 ```
