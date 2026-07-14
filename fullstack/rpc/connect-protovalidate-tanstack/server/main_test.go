@@ -40,11 +40,11 @@ func (r *methodRecorder) last(t *testing.T) string {
 	return r.methods[len(r.methods)-1]
 }
 
-// newTestClient spins up the real handler stack (interceptor included)
+// newTestClient spins up the real handler stack (interceptors included)
 // behind httptest and returns a generated client pointed at it.
-func newTestClient(t *testing.T, opts ...connect.ClientOption) (examplev1connect.NewsletterServiceClient, *methodRecorder) {
+func newTestClient(t *testing.T, svc examplev1connect.NewsletterServiceHandler, opts ...connect.ClientOption) (examplev1connect.NewsletterServiceClient, *methodRecorder) {
 	t.Helper()
-	rec := &methodRecorder{next: newMux()}
+	rec := &methodRecorder{next: newMux(svc)}
 	srv := httptest.NewServer(rec)
 	t.Cleanup(srv.Close)
 	return examplev1connect.NewNewsletterServiceClient(srv.Client(), srv.URL, opts...), rec
@@ -52,7 +52,7 @@ func newTestClient(t *testing.T, opts ...connect.ClientOption) (examplev1connect
 
 func TestSubscribe(t *testing.T) {
 	t.Parallel()
-	client, _ := newTestClient(t)
+	client, _ := newTestClient(t, newNewsletterServer())
 	ctx := context.Background()
 
 	t.Run("valid request returns a subscription id", func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestGetSubscription(t *testing.T) {
 	t.Parallel()
 	// WithHTTPGet turns NO_SIDE_EFFECTS methods into HTTP GETs; other
 	// methods (Subscribe) keep travelling as POST.
-	client, rec := newTestClient(t, connect.WithHTTPGet())
+	client, rec := newTestClient(t, newNewsletterServer(), connect.WithHTTPGet())
 	ctx := context.Background()
 
 	t.Run("reads back over HTTP GET what Subscribe stored over POST", func(t *testing.T) {
@@ -162,4 +162,38 @@ func TestGetSubscription(t *testing.T) {
 			t.Fatalf("code = %v, want invalid_argument", code)
 		}
 	})
+}
+
+// panickyServer stands in for a buggy handler implementation.
+type panickyServer struct{}
+
+func (panickyServer) Subscribe(
+	context.Context, *connect.Request[examplev1.SubscribeRequest],
+) (*connect.Response[examplev1.SubscribeResponse], error) {
+	panic("db password in a stack trace")
+}
+
+func (panickyServer) GetSubscription(
+	context.Context, *connect.Request[examplev1.GetSubscriptionRequest],
+) (*connect.Response[examplev1.GetSubscriptionResponse], error) {
+	panic("unreachable in this test")
+}
+
+func TestPanicShield(t *testing.T) {
+	t.Parallel()
+	client, _ := newTestClient(t, panickyServer{})
+
+	// The request is valid, so it passes the interceptor and hits the
+	// panicking handler.
+	_, err := client.Subscribe(context.Background(), connect.NewRequest(&examplev1.SubscribeRequest{
+		Email: "ada@example.com",
+		Name:  "Ada",
+	}))
+
+	if code := connect.CodeOf(err); code != connect.CodeInternal {
+		t.Fatalf("code = %v, want internal", code)
+	}
+	if strings.Contains(err.Error(), "db password") {
+		t.Errorf("panic detail leaked to the client: %v", err)
+	}
 }

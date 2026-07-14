@@ -3,9 +3,10 @@
 // for an in-memory one.
 import { TransportProvider } from "@connectrpc/connect-query";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 
+import { createQueryClient } from "./query-client.js";
 import { SubscribeForm } from "./subscribe-form.js";
 
 const transport = createConnectTransport({
@@ -14,7 +15,7 @@ const transport = createConnectTransport({
   // and CDNs can cache them; RPCs with side effects still go as POST.
   useHttpGet: true,
 });
-const queryClient = new QueryClient();
+const queryClient = createQueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <TransportProvider transport={transport}>

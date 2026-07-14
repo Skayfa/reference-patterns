@@ -1,5 +1,6 @@
 import { useQuery } from "@connectrpc/connect-query";
 
+import { userMessage } from "./connect-errors.js";
 import { NewsletterService } from "./pb/example/v1/newsletter_pb.js";
 
 /**
@@ -18,7 +19,7 @@ export function SubscriptionStatus({
   });
 
   if (query.isPending) return <p>Loading subscription…</p>;
-  if (query.isError) return <p role="alert">{query.error.message}</p>;
+  if (query.isError) return <p role="alert">{userMessage(query.error)}</p>;
 
   return (
     <p>

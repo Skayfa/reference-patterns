@@ -27,14 +27,45 @@ describe("SubscriptionStatus", () => {
     });
   });
 
-  it("surfaces a not_found error", async () => {
+  it("shows a friendly message for not_found — and does not retry it", async () => {
+    const getSubscription = vi.fn((): { subscriptionId: string; email: string; name: string } => {
+      throw new ConnectError("subscription sub_missing not found", Code.NotFound);
+    });
     renderWithNewsletter(<SubscriptionStatus subscriptionId="sub_missing" />, {
-      getSubscription: () => {
-        throw new ConnectError("subscription not found", Code.NotFound);
-      },
+      getSubscription,
     });
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("not_found");
+    expect(alert).toHaveTextContent("Not found.");
+    expect(alert).not.toHaveTextContent("sub_missing");
+    // not_found is not transient: the retry policy never retries it, which
+    // is also why this test is fast with the production QueryClient.
+    expect(getSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries transient failures and eventually renders", async () => {
+    let calls = 0;
+    const getSubscription = vi.fn((req: GetSubscriptionRequest) => {
+      calls += 1;
+      if (calls === 1) {
+        throw new ConnectError("temporarily down", Code.Unavailable);
+      }
+      return {
+        subscriptionId: req.subscriptionId,
+        email: "grace@example.com",
+        name: "Grace",
+      };
+    });
+    renderWithNewsletter(<SubscriptionStatus subscriptionId="sub_42" />, {
+      getSubscription,
+    });
+
+    // First attempt fails with a transient code -> automatically retried.
+    expect(
+      await screen.findByText(/Grace <grace@example.com>/, undefined, {
+        timeout: 4000,
+      }),
+    ).toBeInTheDocument();
+    expect(getSubscription).toHaveBeenCalledTimes(2);
   });
 });

@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -66,12 +67,20 @@ func (s *newsletterServer) GetSubscription(
 }
 
 // newMux is shared by main and the tests, so tests exercise the exact
-// handler stack that production serves — interceptor included.
-func newMux() *http.ServeMux {
+// handler stack that production serves — interceptors included. Error
+// discipline: handlers only return connect.NewError with deliberate codes
+// (a bare error would reach clients as code unknown WITH its message).
+func newMux(svc examplev1connect.NewsletterServiceHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 	path, handler := examplev1connect.NewNewsletterServiceHandler(
-		newNewsletterServer(),
+		svc,
 		connect.WithInterceptors(validate.NewInterceptor()),
+		// Panics must never leak internals to clients: log server-side,
+		// answer with a generic internal error.
+		connect.WithRecover(func(_ context.Context, spec connect.Spec, _ http.Header, r any) error {
+			log.Printf("panic in %s: %v", spec.Procedure, r)
+			return connect.NewError(connect.CodeInternal, errors.New("internal error"))
+		}),
 	)
 	mux.Handle(path, handler)
 	return mux
@@ -82,5 +91,5 @@ func main() {
 	// h2c (golang.org/x/net/http2/h2c) only if plaintext gRPC clients must
 	// connect too.
 	log.Println("listening on http://localhost:8080")
-	log.Fatal(http.ListenAndServe("localhost:8080", newMux()))
+	log.Fatal(http.ListenAndServe("localhost:8080", newMux(newNewsletterServer())))
 }

@@ -3,7 +3,7 @@ name: connect-protovalidate-tanstack
 language: fullstack
 category: rpc
 tags: [go, connectrpc, protobuf, protovalidate, buf, react, tanstack-form, tanstack-query, zod]
-description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, tested on both sides without a network
+description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, and code-driven error handling (server violations mapped back onto form fields, transient-only retries, panic shield) — tested on both sides without a network
 test: (cd server && go test ./...) && (cd web && pnpm test)
 ---
 
@@ -56,6 +56,15 @@ or mirrors it:
   sends it as a plain **HTTP GET**, cacheable by browsers and CDNs. `server/main_test.go` proves the
   wire behavior: `Subscribe` travels as POST, `GetSubscription` as GET,
   and protovalidate rules apply to GET requests too.
+- **Error handling is code-driven end to end** (`web/src/connect-errors.ts`):
+  the RPC code is the error API. Server side, panics are shielded
+  (`connect.WithRecover` → logged, generic `internal`) and handlers only
+  return `connect.NewError` with deliberate codes. Client side,
+  `serverErrorMap` splits every failure: protovalidate `Violations` from
+  the error details land **under their form fields** via
+  `form.setErrorMap({ onServer: ... })`, everything else becomes one
+  code-mapped user message (`userMessage`) — raw RPC messages never reach
+  the DOM. `createQueryClient` retries transient codes only, queries only.
 - **Tests on both sides, no network**:
   `server/main_test.go` drives the real handler stack through `httptest`
   and asserts the validation table; `web/tests/subscribe-form.test.tsx`
@@ -65,6 +74,25 @@ or mirrors it:
 
 ## Key points
 
+- **Server errors belong to the `onServer` cause, not `onSubmitAsync`**:
+  TanStack Form injects a no-op validator for the server cause on every
+  change/blur cycle, so `onServer` errors auto-clear as soon as the user
+  edits and `canSubmit` recovers. Errors returned from `onSubmitAsync`
+  (cause `onSubmit`) only re-validate on the next submit — with a
+  `disabled={!canSubmit}` button that is a deadlock. (The `as never` cast
+  exists because form-core types the onServer slot after a validator that
+  cannot be declared; the runtime distributes `{form, fields}` on any
+  cause.)
+- **Retry what is transient, nothing else**: network failures surface as
+  `Code.Unknown` in connect-es, so transient = `Unavailable`,
+  `DeadlineExceeded`, `ResourceExhausted`, `Unknown` — retried twice, for
+  queries only (reads are idempotent; a `Subscribe` is not). `not_found`
+  and `invalid_argument` fail fast, which also keeps the error-path tests
+  fast with the production QueryClient.
+- **Go: a bare `error` returned from a handler reaches the client as code
+  `unknown` WITH its message** — always wrap with `connect.NewError` and a
+  deliberate code, and keep `WithRecover` so a panic answers a generic
+  `internal` instead of leaking internals.
 - **Form composition scales, render props don't**: one `TextField` bound
   via `useFieldContext` replaces the per-field boilerplate in every form.
   New forms only declare fields and labels; growing the app's form

@@ -2,6 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { createStandardSchema } from "@bufbuild/protovalidate";
 import { useMutation } from "@connectrpc/connect-query";
 
+import { serverErrorMap } from "./connect-errors.js";
 import { useAppForm } from "./form/use-app-form.js";
 import {
   NewsletterService,
@@ -24,11 +25,20 @@ export function SubscribeForm() {
   const form = useAppForm({
     defaultValues: create(SubscribeRequestSchema),
     validators: { onChange: subscribeValidator },
-    onSubmit: async ({ value }) => {
-      // Swallow the rejection: TanStack Query owns the error state and the
-      // component renders it from mutation.isError. Awaiting still keeps
-      // form.state.isSubmitting true for the duration of the call.
-      await mutation.mutateAsync(value).catch(() => undefined);
+    onSubmit: async ({ value, formApi }) => {
+      try {
+        await mutation.mutateAsync(value);
+      } catch (error) {
+        // Server Violations land under their fields, anything else becomes
+        // a code-mapped form-level message. The onServer cause is cleared
+        // by the framework on the next edit, so canSubmit recovers —
+        // returning these from onSubmitAsync instead would deadlock the
+        // disabled submit button (onSubmit errors only clear on submit).
+        // Cast: setErrorMap distributes the {form, fields} shape on any
+        // cause at runtime, but form-core types the onServer slot after an
+        // onServer validator that cannot be declared.
+        formApi.setErrorMap({ onServer: serverErrorMap(error) as never });
+      }
     },
   });
 
@@ -49,11 +59,7 @@ export function SubscribeForm() {
 
         <form.SubmitButton label="Subscribe" pendingLabel="Subscribing…" />
 
-        {mutation.isError ? (
-          // Server-side rejections (protovalidate) land here with the
-          // violated field in the message.
-          <p role="alert">{mutation.error.message}</p>
-        ) : null}
+        <form.FormError />
       </form.Form>
     </form.AppForm>
   );

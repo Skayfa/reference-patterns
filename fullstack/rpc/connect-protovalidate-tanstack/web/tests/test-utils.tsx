@@ -1,11 +1,12 @@
 import type { ServiceImpl } from "@connectrpc/connect";
 import { createRouterTransport } from "@connectrpc/connect";
 import { TransportProvider } from "@connectrpc/connect-query";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { NewsletterService } from "../src/pb/example/v1/newsletter_pb.js";
+import { createQueryClient } from "../src/query-client.js";
 
 /**
  * Renders UI against a real Connect service running in memory
@@ -21,13 +22,9 @@ export function renderWithNewsletter(
   });
   render(
     <TransportProvider transport={transport}>
-      <QueryClientProvider
-        // retry: false so error cases fail immediately instead of going
-        // through TanStack Query's default 3 retries.
-        client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
-        }
-      >
+      {/* The production QueryClient, real retry policy included: error
+          tests stay fast because non-transient codes are never retried. */}
+      <QueryClientProvider client={createQueryClient()}>
         {ui}
       </QueryClientProvider>
     </TransportProvider>,
