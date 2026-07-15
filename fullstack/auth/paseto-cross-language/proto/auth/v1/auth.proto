@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "auth/v1/access.proto";
+import "buf/validate/validate.proto";
+
+// AuthService is the single token issuer. Only the Go server implements it;
+// every other service just verifies the tokens it emits. The methods are
+// explicitly public: the default-deny gate requires every RPC to declare
+// its access rule, including "none needed".
+service AuthService {
+  rpc SignUp(SignUpRequest) returns (SignUpResponse) {
+    option (auth.v1.access) = {public: true};
+  }
+  rpc LogIn(LogInRequest) returns (LogInResponse) {
+    option (auth.v1.access) = {public: true};
+  }
+  rpc Refresh(RefreshRequest) returns (RefreshResponse) {
+    option (auth.v1.access) = {public: true};
+  }
+  rpc LogOut(LogOutRequest) returns (LogOutResponse) {
+    option (auth.v1.access) = {public: true};
+  }
+}
+
+message SignUpRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string password = 2 [(buf.validate.field).string.min_len = 8];
+}
+
+message SignUpResponse {
+  string user_id = 1;
+}
+
+message LogInRequest {
+  string email = 1 [(buf.validate.field).string.min_len = 1];
+  string password = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message LogInResponse {
+  TokenPair tokens = 1;
+}
+
+message RefreshRequest {
+  string refresh_token = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RefreshResponse {
+  TokenPair tokens = 1;
+}
+
+message LogOutRequest {
+  string refresh_token = 1;
+}
+
+message LogOutResponse {}
+
+message TokenPair {
+  // PASETO v4.public access token ("v4.public...."), short-lived.
+  string access_token = 1;
+  // RFC 3339, verbatim copy of the token's exp claim. PASETO claims are
+  // RFC 3339 strings by spec, so no timestamp conversion happens anywhere.
+  string access_expires_at = 2;
+  // Opaque single-use token: exchanged (and rotated) via Refresh.
+  string refresh_token = 3;
+}

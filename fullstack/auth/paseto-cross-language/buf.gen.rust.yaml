@@ -1,0 +1,17 @@
+# Rust consumer: only the services the Rust server implements — demo.v1
+# (verifier demo) and bookmark.v1 (its own entity). prost discards custom
+# options anyway; the ACL reaches Rust through the descriptor set (Makefile).
+# The prost/tonic/tonic-prost crate versions in verifier-rust/Cargo.toml are
+# pinned to what these plugin versions emit.
+version: v2
+inputs:
+  - directory: .
+    paths:
+      - proto/demo
+      - proto/bookmark
+plugins:
+  - remote: buf.build/community/neoeinstein-prost
+    out: verifier-rust/src/pb
+  - remote: buf.build/community/neoeinstein-tonic
+    out: verifier-rust/src/pb
+    opt: no_client=true

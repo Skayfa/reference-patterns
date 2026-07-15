@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "google/protobuf/descriptor.proto";
+
+// The one place role names exist. Token claims and DB rows store the
+// lower-cased name without the prefix ("user", "admin") — the middlewares
+// map back via "ROLE_" + upper(claim). Enum numbers define the hierarchy:
+// a higher role passes a lower requirement.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_USER = 1;
+  ROLE_ADMIN = 2;
+}
+
+// Declarative per-RPC ACL, carried by the contract itself. Default-deny:
+// EVERY method must be annotated — either public (the auth surface) or with
+// a minimum role — and a CI test fails the build otherwise.
+message AccessRule {
+  // Minimum role required; callers with a higher role pass.
+  Role minimum_role = 1;
+  // Explicitly unauthenticated (sign-up, log-in, ...).
+  bool public = 2;
+}
+
+extend google.protobuf.MethodOptions {
+  AccessRule access = 50001;
+}

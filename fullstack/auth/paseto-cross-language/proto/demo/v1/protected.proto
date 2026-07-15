@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package demo.v1;
+
+import "auth/v1/access.proto";
+
+// ProtectedService is implemented by all three servers (Go, Rust, TS).
+// Each verifies the caller's PASETO access token locally — no call to the
+// issuer — using only the Ed25519 public key. Per-RPC permissions are
+// declared here with (auth.v1.access) and enforced by every server.
+service ProtectedService {
+  rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse) {
+    option (auth.v1.access) = {minimum_role: ROLE_USER};
+  }
+  rpc AdminOnly(AdminOnlyRequest) returns (AdminOnlyResponse) {
+    option (auth.v1.access) = {minimum_role: ROLE_ADMIN};
+  }
+}
+
+message WhoAmIRequest {}
+
+message WhoAmIResponse {
+  string subject = 1;
+  string role = 2;
+  // RFC 3339, echoed verbatim from the token claims.
+  string issued_at = 3;
+  string expires_at = 4;
+  // Which implementation answered: "go-connect" | "rust-tonic" | "ts-connect".
+  string served_by = 5;
+}
+
+message AdminOnlyRequest {}
+
+message AdminOnlyResponse {
+  string secret = 1;
+}

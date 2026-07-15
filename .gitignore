@@ -3,6 +3,9 @@ dist/
 coverage/
 gen/
 target/
+*.db
+*.db-shm
+*.db-wal
 .DS_Store
 *.log
 go.work.sum
