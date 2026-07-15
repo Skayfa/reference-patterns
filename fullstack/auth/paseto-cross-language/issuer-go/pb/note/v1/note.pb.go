@@ -352,13 +352,17 @@ const file_note_v1_note_proto_rawDesc = "" +
 	"\x05notes\x18\x01 \x03(\v2\r.note.v1.NoteR\x05notes\",\n" +
 	"\x11DeleteNoteRequest\x12\x17\n" +
 	"\x02id\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x02id\"\x14\n" +
-	"\x12DeleteNoteResponse2\xf7\x01\n" +
-	"\vNoteService\x12M\n" +
+	"\x12DeleteNoteResponse2\x98\x02\n" +
+	"\vNoteService\x12X\n" +
 	"\n" +
-	"CreateNote\x12\x1a.note.v1.CreateNoteRequest\x1a\x1b.note.v1.CreateNoteResponse\"\x06\x8a\xb5\x18\x02\b\x01\x12J\n" +
-	"\tListNotes\x12\x19.note.v1.ListNotesRequest\x1a\x1a.note.v1.ListNotesResponse\"\x06\x8a\xb5\x18\x02\b\x01\x12M\n" +
+	"CreateNote\x12\x1a.note.v1.CreateNoteRequest\x1a\x1b.note.v1.CreateNoteResponse\"\x11\x8a\xb5\x18\r\n" +
+	"\vnotes.write\x12T\n" +
+	"\tListNotes\x12\x19.note.v1.ListNotesRequest\x1a\x1a.note.v1.ListNotesResponse\"\x10\x8a\xb5\x18\f\n" +
 	"\n" +
-	"DeleteNote\x12\x1a.note.v1.DeleteNoteRequest\x1a\x1b.note.v1.DeleteNoteResponse\"\x06\x8a\xb5\x18\x02\b\x01B\xbc\x01\n" +
+	"notes.read\x12Y\n" +
+	"\n" +
+	"DeleteNote\x12\x1a.note.v1.DeleteNoteRequest\x1a\x1b.note.v1.DeleteNoteResponse\"\x12\x8a\xb5\x18\x0e\n" +
+	"\fnotes.deleteB\xbc\x01\n" +
 	"\vcom.note.v1B\tNoteProtoP\x01Zegithub.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/note/v1;notev1\xa2\x02\x03NXX\xaa\x02\aNote.V1\xca\x02\aNote\\V1\xe2\x02\x13Note\\V1\\GPBMetadata\xea\x02\bNote::V1b\x06proto3"
 
 var (

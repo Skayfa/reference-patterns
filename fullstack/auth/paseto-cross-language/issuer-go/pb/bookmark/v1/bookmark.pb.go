@@ -370,11 +370,14 @@ const file_bookmark_v1_bookmark_proto_rawDesc = "" +
 	"\tbookmarks\x18\x01 \x03(\v2\x15.bookmark.v1.BookmarkR\tbookmarks\"0\n" +
 	"\x15DeleteBookmarkRequest\x12\x17\n" +
 	"\x02id\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x02id\"\x18\n" +
-	"\x16DeleteBookmarkResponse2\xb7\x02\n" +
-	"\x0fBookmarkService\x12a\n" +
-	"\x0eCreateBookmark\x12\".bookmark.v1.CreateBookmarkRequest\x1a#.bookmark.v1.CreateBookmarkResponse\"\x06\x8a\xb5\x18\x02\b\x01\x12^\n" +
-	"\rListBookmarks\x12!.bookmark.v1.ListBookmarksRequest\x1a\".bookmark.v1.ListBookmarksResponse\"\x06\x8a\xb5\x18\x02\b\x01\x12a\n" +
-	"\x0eDeleteBookmark\x12\".bookmark.v1.DeleteBookmarkRequest\x1a#.bookmark.v1.DeleteBookmarkResponse\"\x06\x8a\xb5\x18\x02\b\x01B\xdc\x01\n" +
+	"\x16DeleteBookmarkResponse2\xe4\x02\n" +
+	"\x0fBookmarkService\x12p\n" +
+	"\x0eCreateBookmark\x12\".bookmark.v1.CreateBookmarkRequest\x1a#.bookmark.v1.CreateBookmarkResponse\"\x15\x8a\xb5\x18\x11\n" +
+	"\x0fbookmarks.write\x12l\n" +
+	"\rListBookmarks\x12!.bookmark.v1.ListBookmarksRequest\x1a\".bookmark.v1.ListBookmarksResponse\"\x14\x8a\xb5\x18\x10\n" +
+	"\x0ebookmarks.read\x12q\n" +
+	"\x0eDeleteBookmark\x12\".bookmark.v1.DeleteBookmarkRequest\x1a#.bookmark.v1.DeleteBookmarkResponse\"\x16\x8a\xb5\x18\x12\n" +
+	"\x10bookmarks.deleteB\xdc\x01\n" +
 	"\x0fcom.bookmark.v1B\rBookmarkProtoP\x01Zmgithub.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/bookmark/v1;bookmarkv1\xa2\x02\x03BXX\xaa\x02\vBookmark.V1\xca\x02\vBookmark\\V1\xe2\x02\x17Bookmark\\V1\\GPBMetadata\xea\x02\fBookmark::V1b\x06proto3"
 
 var (

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file note/v1/note.proto.
  */
 export const file_note_v1_note: GenFile = /*@__PURE__*/
-  fileDesc("ChJub3RlL3YxL25vdGUucHJvdG8SB25vdGUudjEiNAoETm90ZRIKCgJpZBgBIAEoCRIMCgR0ZXh0GAIgASgJEhIKCmNyZWF0ZWRfYXQYAyABKAkiLQoRQ3JlYXRlTm90ZVJlcXVlc3QSGAoEdGV4dBgBIAEoCUIKukgHcgUQARj0AyIxChJDcmVhdGVOb3RlUmVzcG9uc2USGwoEbm90ZRgBIAEoCzINLm5vdGUudjEuTm90ZSISChBMaXN0Tm90ZXNSZXF1ZXN0IjEKEUxpc3ROb3Rlc1Jlc3BvbnNlEhwKBW5vdGVzGAEgAygLMg0ubm90ZS52MS5Ob3RlIigKEURlbGV0ZU5vdGVSZXF1ZXN0EhMKAmlkGAEgASgJQge6SARyAhABIhQKEkRlbGV0ZU5vdGVSZXNwb25zZTL3AQoLTm90ZVNlcnZpY2USTQoKQ3JlYXRlTm90ZRIaLm5vdGUudjEuQ3JlYXRlTm90ZVJlcXVlc3QaGy5ub3RlLnYxLkNyZWF0ZU5vdGVSZXNwb25zZSIGirUYAggBEkoKCUxpc3ROb3RlcxIZLm5vdGUudjEuTGlzdE5vdGVzUmVxdWVzdBoaLm5vdGUudjEuTGlzdE5vdGVzUmVzcG9uc2UiBoq1GAIIARJNCgpEZWxldGVOb3RlEhoubm90ZS52MS5EZWxldGVOb3RlUmVxdWVzdBobLm5vdGUudjEuRGVsZXRlTm90ZVJlc3BvbnNlIgaKtRgCCAFiBnByb3RvMw", [file_auth_v1_access, file_buf_validate_validate]);
+  fileDesc("ChJub3RlL3YxL25vdGUucHJvdG8SB25vdGUudjEiNAoETm90ZRIKCgJpZBgBIAEoCRIMCgR0ZXh0GAIgASgJEhIKCmNyZWF0ZWRfYXQYAyABKAkiLQoRQ3JlYXRlTm90ZVJlcXVlc3QSGAoEdGV4dBgBIAEoCUIKukgHcgUQARj0AyIxChJDcmVhdGVOb3RlUmVzcG9uc2USGwoEbm90ZRgBIAEoCzINLm5vdGUudjEuTm90ZSISChBMaXN0Tm90ZXNSZXF1ZXN0IjEKEUxpc3ROb3Rlc1Jlc3BvbnNlEhwKBW5vdGVzGAEgAygLMg0ubm90ZS52MS5Ob3RlIigKEURlbGV0ZU5vdGVSZXF1ZXN0EhMKAmlkGAEgASgJQge6SARyAhABIhQKEkRlbGV0ZU5vdGVSZXNwb25zZTKYAgoLTm90ZVNlcnZpY2USWAoKQ3JlYXRlTm90ZRIaLm5vdGUudjEuQ3JlYXRlTm90ZVJlcXVlc3QaGy5ub3RlLnYxLkNyZWF0ZU5vdGVSZXNwb25zZSIRirUYDQoLbm90ZXMud3JpdGUSVAoJTGlzdE5vdGVzEhkubm90ZS52MS5MaXN0Tm90ZXNSZXF1ZXN0Ghoubm90ZS52MS5MaXN0Tm90ZXNSZXNwb25zZSIQirUYDAoKbm90ZXMucmVhZBJZCgpEZWxldGVOb3RlEhoubm90ZS52MS5EZWxldGVOb3RlUmVxdWVzdBobLm5vdGUudjEuRGVsZXRlTm90ZVJlc3BvbnNlIhKKtRgOCgxub3Rlcy5kZWxldGViBnByb3RvMw", [file_auth_v1_access, file_buf_validate_validate]);
 
 /**
  * @generated from message note.v1.Note
@@ -167,8 +167,9 @@ export const NoteService: GenService<{
     output: typeof ListNotesResponseSchema;
   },
   /**
-   * The option gates the role; ownership (owner-or-admin) is business logic
-   * in the handler — claims are in the context, put there by the middleware.
+   * The option gates "notes.delete" (which owners have); deleting someone
+   * else's requires the elevated "admin.notes.delete_any", checked in the
+   * handler — claims are in the context, put there by the middleware.
    *
    * @generated from rpc note.v1.NoteService.DeleteNote
    */

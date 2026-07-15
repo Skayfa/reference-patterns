@@ -16,13 +16,15 @@ import "buf/validate/validate.proto";
 // verifier-rust/src/validate.rs).
 service BookmarkService {
   rpc CreateBookmark(CreateBookmarkRequest) returns (CreateBookmarkResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "bookmarks.write"};
   }
   rpc ListBookmarks(ListBookmarksRequest) returns (ListBookmarksResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "bookmarks.read"};
   }
+  // Gates "bookmarks.delete" (owners have it); deleting another user's needs
+  // the elevated "admin.bookmarks.delete_any", checked in the handler.
   rpc DeleteBookmark(DeleteBookmarkRequest) returns (DeleteBookmarkResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "bookmarks.delete"};
   }
 }
 

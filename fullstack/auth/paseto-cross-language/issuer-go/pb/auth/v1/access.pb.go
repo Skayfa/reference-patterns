@@ -22,16 +22,19 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The one place role names exist. Token claims and DB rows store the
-// lower-cased name without the prefix ("user", "admin") — the middlewares
-// map back via "ROLE_" + upper(claim). Enum numbers define the hierarchy:
-// a higher role passes a lower requirement.
+// Roles are the closed set of identities; a token carries one role name
+// (lower-cased, "user"/"admin"). Permissions are NOT an enum — they are the
+// free-form strings the RPCs declare (see AccessRule.permission). Each role
+// grants a set of glob patterns over those strings, right here in the
+// contract, so a brand-new permission under an existing prefix is covered
+// automatically with no edit here.
 type Role int32
 
 const (
 	Role_ROLE_UNSPECIFIED Role = 0
 	Role_ROLE_USER        Role = 1
-	Role_ROLE_ADMIN       Role = 2
+	// "*" matches everything, including permissions added later.
+	Role_ROLE_ADMIN Role = 2
 )
 
 // Enum value maps for Role.
@@ -75,14 +78,18 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 	return file_auth_v1_access_proto_rawDescGZIP(), []int{0}
 }
 
-// Declarative per-RPC ACL, carried by the contract itself. Default-deny:
-// EVERY method must be annotated — either public (the auth surface) or with
-// a minimum role — and a CI test fails the build otherwise.
+// Per-RPC ACL, carried by the contract. Default-deny: every method must be
+// annotated — public, or with a required permission — and a CI test fails the
+// build otherwise.
 type AccessRule struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Minimum role required; callers with a higher role pass.
-	MinimumRole Role `protobuf:"varint,1,opt,name=minimum_role,json=minimumRole,proto3,enum=auth.v1.Role" json:"minimum_role,omitempty"`
-	// Explicitly unauthenticated (sign-up, log-in, ...).
+	// The permission this RPC requires, e.g. "notes.write". Free-form: the
+	// catalogue is just the union of these strings across all RPCs, nothing to
+	// maintain on the side. A caller passes if any of its role's grant patterns
+	// matches this string.
+	Permission string `protobuf:"bytes,1,opt,name=permission,proto3" json:"permission,omitempty"`
+	// Explicitly unauthenticated (sign-up, log-in, ...); mounted without the
+	// auth interceptor.
 	Public        bool `protobuf:"varint,2,opt,name=public,proto3" json:"public,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -118,11 +125,11 @@ func (*AccessRule) Descriptor() ([]byte, []int) {
 	return file_auth_v1_access_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AccessRule) GetMinimumRole() Role {
+func (x *AccessRule) GetPermission() string {
 	if x != nil {
-		return x.MinimumRole
+		return x.Permission
 	}
-	return Role_ROLE_UNSPECIFIED
+	return ""
 }
 
 func (x *AccessRule) GetPublic() bool {
@@ -134,6 +141,14 @@ func (x *AccessRule) GetPublic() bool {
 
 var file_auth_v1_access_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
+		ExtendedType:  (*descriptorpb.EnumValueOptions)(nil),
+		ExtensionType: ([]string)(nil),
+		Field:         50002,
+		Name:          "auth.v1.grants",
+		Tag:           "bytes,50002,rep,name=grants",
+		Filename:      "auth/v1/access.proto",
+	},
+	{
 		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
 		ExtensionType: (*AccessRule)(nil),
 		Field:         50001,
@@ -143,26 +158,35 @@ var file_auth_v1_access_proto_extTypes = []protoimpl.ExtensionInfo{
 	},
 }
 
+// Extension fields to descriptorpb.EnumValueOptions.
+var (
+	// repeated string grants = 50002;
+	E_Grants = &file_auth_v1_access_proto_extTypes[0]
+)
+
 // Extension fields to descriptorpb.MethodOptions.
 var (
 	// optional auth.v1.AccessRule access = 50001;
-	E_Access = &file_auth_v1_access_proto_extTypes[0]
+	E_Access = &file_auth_v1_access_proto_extTypes[1]
 )
 
 var File_auth_v1_access_proto protoreflect.FileDescriptor
 
 const file_auth_v1_access_proto_rawDesc = "" +
 	"\n" +
-	"\x14auth/v1/access.proto\x12\aauth.v1\x1a google/protobuf/descriptor.proto\"V\n" +
+	"\x14auth/v1/access.proto\x12\aauth.v1\x1a google/protobuf/descriptor.proto\"D\n" +
 	"\n" +
-	"AccessRule\x120\n" +
-	"\fminimum_role\x18\x01 \x01(\x0e2\r.auth.v1.RoleR\vminimumRole\x12\x16\n" +
-	"\x06public\x18\x02 \x01(\bR\x06public*;\n" +
+	"AccessRule\x12\x1e\n" +
+	"\n" +
+	"permission\x18\x01 \x01(\tR\n" +
+	"permission\x12\x16\n" +
+	"\x06public\x18\x02 \x01(\bR\x06public*n\n" +
 	"\x04Role\x12\x14\n" +
-	"\x10ROLE_UNSPECIFIED\x10\x00\x12\r\n" +
-	"\tROLE_USER\x10\x01\x12\x0e\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x129\n" +
+	"\tROLE_USER\x10\x01\x1a*\x92\xb5\x18\fprofile.read\x92\xb5\x18\anotes.*\x92\xb5\x18\vbookmarks.*\x12\x15\n" +
 	"\n" +
-	"ROLE_ADMIN\x10\x02:M\n" +
+	"ROLE_ADMIN\x10\x02\x1a\x05\x92\xb5\x18\x01*:;\n" +
+	"\x06grants\x12!.google.protobuf.EnumValueOptions\x18҆\x03 \x03(\tR\x06grants:M\n" +
 	"\x06access\x12\x1e.google.protobuf.MethodOptions\x18ц\x03 \x01(\v2\x13.auth.v1.AccessRuleR\x06accessB\xbe\x01\n" +
 	"\vcom.auth.v1B\vAccessProtoP\x01Zegithub.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/auth/v1;authv1\xa2\x02\x03AXX\xaa\x02\aAuth.V1\xca\x02\aAuth\\V1\xe2\x02\x13Auth\\V1\\GPBMetadata\xea\x02\bAuth::V1b\x06proto3"
 
@@ -181,19 +205,20 @@ func file_auth_v1_access_proto_rawDescGZIP() []byte {
 var file_auth_v1_access_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_auth_v1_access_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_auth_v1_access_proto_goTypes = []any{
-	(Role)(0),                          // 0: auth.v1.Role
-	(*AccessRule)(nil),                 // 1: auth.v1.AccessRule
-	(*descriptorpb.MethodOptions)(nil), // 2: google.protobuf.MethodOptions
+	(Role)(0),                             // 0: auth.v1.Role
+	(*AccessRule)(nil),                    // 1: auth.v1.AccessRule
+	(*descriptorpb.EnumValueOptions)(nil), // 2: google.protobuf.EnumValueOptions
+	(*descriptorpb.MethodOptions)(nil),    // 3: google.protobuf.MethodOptions
 }
 var file_auth_v1_access_proto_depIdxs = []int32{
-	0, // 0: auth.v1.AccessRule.minimum_role:type_name -> auth.v1.Role
-	2, // 1: auth.v1.access:extendee -> google.protobuf.MethodOptions
+	2, // 0: auth.v1.grants:extendee -> google.protobuf.EnumValueOptions
+	3, // 1: auth.v1.access:extendee -> google.protobuf.MethodOptions
 	1, // 2: auth.v1.access:type_name -> auth.v1.AccessRule
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	2, // [2:3] is the sub-list for extension type_name
-	1, // [1:2] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // [0:2] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_auth_v1_access_proto_init() }
@@ -208,7 +233,7 @@ func file_auth_v1_access_proto_init() {
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_access_proto_rawDesc), len(file_auth_v1_access_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   1,
-			NumExtensions: 1,
+			NumExtensions: 2,
 			NumServices:   0,
 		},
 		GoTypes:           file_auth_v1_access_proto_goTypes,

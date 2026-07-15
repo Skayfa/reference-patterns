@@ -48,6 +48,8 @@ const (
 type BookmarkServiceClient interface {
 	CreateBookmark(context.Context, *connect.Request[v1.CreateBookmarkRequest]) (*connect.Response[v1.CreateBookmarkResponse], error)
 	ListBookmarks(context.Context, *connect.Request[v1.ListBookmarksRequest]) (*connect.Response[v1.ListBookmarksResponse], error)
+	// Gates "bookmarks.delete" (owners have it); deleting another user's needs
+	// the elevated "admin.bookmarks.delete_any", checked in the handler.
 	DeleteBookmark(context.Context, *connect.Request[v1.DeleteBookmarkRequest]) (*connect.Response[v1.DeleteBookmarkResponse], error)
 }
 
@@ -109,6 +111,8 @@ func (c *bookmarkServiceClient) DeleteBookmark(ctx context.Context, req *connect
 type BookmarkServiceHandler interface {
 	CreateBookmark(context.Context, *connect.Request[v1.CreateBookmarkRequest]) (*connect.Response[v1.CreateBookmarkResponse], error)
 	ListBookmarks(context.Context, *connect.Request[v1.ListBookmarksRequest]) (*connect.Response[v1.ListBookmarksResponse], error)
+	// Gates "bookmarks.delete" (owners have it); deleting another user's needs
+	// the elevated "admin.bookmarks.delete_any", checked in the handler.
 	DeleteBookmark(context.Context, *connect.Request[v1.DeleteBookmarkRequest]) (*connect.Response[v1.DeleteBookmarkResponse], error)
 }
 

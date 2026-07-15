@@ -10,10 +10,10 @@ import "auth/v1/access.proto";
 // declared here with (auth.v1.access) and enforced by every server.
 service ProtectedService {
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "profile.read"};
   }
   rpc AdminOnly(AdminOnlyRequest) returns (AdminOnlyResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_ADMIN};
+    option (auth.v1.access) = {permission: "admin.diagnostics"};
   }
 }
 

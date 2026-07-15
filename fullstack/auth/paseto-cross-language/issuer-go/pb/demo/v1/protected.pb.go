@@ -231,10 +231,12 @@ const file_demo_v1_protected_proto_rawDesc = "" +
 	"\tserved_by\x18\x05 \x01(\tR\bservedBy\"\x12\n" +
 	"\x10AdminOnlyRequest\"+\n" +
 	"\x11AdminOnlyResponse\x12\x16\n" +
-	"\x06secret\x18\x01 \x01(\tR\x06secret2\xa1\x01\n" +
-	"\x10ProtectedService\x12A\n" +
-	"\x06WhoAmI\x12\x16.demo.v1.WhoAmIRequest\x1a\x17.demo.v1.WhoAmIResponse\"\x06\x8a\xb5\x18\x02\b\x01\x12J\n" +
-	"\tAdminOnly\x12\x19.demo.v1.AdminOnlyRequest\x1a\x1a.demo.v1.AdminOnlyResponse\"\x06\x8a\xb5\x18\x02\b\x02B\xc1\x01\n" +
+	"\x06secret\x18\x01 \x01(\tR\x06secret2\xbe\x01\n" +
+	"\x10ProtectedService\x12M\n" +
+	"\x06WhoAmI\x12\x16.demo.v1.WhoAmIRequest\x1a\x17.demo.v1.WhoAmIResponse\"\x12\x8a\xb5\x18\x0e\n" +
+	"\fprofile.read\x12[\n" +
+	"\tAdminOnly\x12\x19.demo.v1.AdminOnlyRequest\x1a\x1a.demo.v1.AdminOnlyResponse\"\x17\x8a\xb5\x18\x13\n" +
+	"\x11admin.diagnosticsB\xc1\x01\n" +
 	"\vcom.demo.v1B\x0eProtectedProtoP\x01Zegithub.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/demo/v1;demov1\xa2\x02\x03DXX\xaa\x02\aDemo.V1\xca\x02\aDemo\\V1\xe2\x02\x13Demo\\V1\\GPBMetadata\xea\x02\bDemo::V1b\x06proto3"
 
 var (

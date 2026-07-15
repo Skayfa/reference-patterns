@@ -15,15 +15,16 @@ import "buf/validate/validate.proto";
 // storage; the verifiers have nothing to do with it.
 service NoteService {
   rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "notes.write"};
   }
   rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "notes.read"};
   }
-  // The option gates the role; ownership (owner-or-admin) is business logic
-  // in the handler — claims are in the context, put there by the middleware.
+  // The option gates "notes.delete" (which owners have); deleting someone
+  // else's requires the elevated "admin.notes.delete_any", checked in the
+  // handler — claims are in the context, put there by the middleware.
   rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse) {
-    option (auth.v1.access) = {minimum_role: ROLE_USER};
+    option (auth.v1.access) = {permission: "notes.delete"};
   }
 }
 

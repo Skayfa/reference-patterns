@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenExtension, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, extDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { MethodOptions } from "@bufbuild/protobuf/wkt";
+import type { EnumValueOptions, MethodOptions } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_descriptor } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,25 +12,29 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file auth/v1/access.proto.
  */
 export const file_auth_v1_access: GenFile = /*@__PURE__*/
-  fileDesc("ChRhdXRoL3YxL2FjY2Vzcy5wcm90bxIHYXV0aC52MSJBCgpBY2Nlc3NSdWxlEiMKDG1pbmltdW1fcm9sZRgBIAEoDjINLmF1dGgudjEuUm9sZRIOCgZwdWJsaWMYAiABKAgqOwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDQoJUk9MRV9VU0VSEAESDgoKUk9MRV9BRE1JThACOk0KBmFjY2VzcxIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGNGGAyABKAsyEy5hdXRoLnYxLkFjY2Vzc1J1bGVSBmFjY2Vzc2IGcHJvdG8z", [file_google_protobuf_descriptor]);
+  fileDesc("ChRhdXRoL3YxL2FjY2Vzcy5wcm90bxIHYXV0aC52MSIwCgpBY2Nlc3NSdWxlEhIKCnBlcm1pc3Npb24YASABKAkSDgoGcHVibGljGAIgASgIKm4KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEjkKCVJPTEVfVVNFUhABGiqStRgMcHJvZmlsZS5yZWFkkrUYB25vdGVzLiqStRgLYm9va21hcmtzLioSFQoKUk9MRV9BRE1JThACGgWStRgBKjo7CgZncmFudHMSIS5nb29nbGUucHJvdG9idWYuRW51bVZhbHVlT3B0aW9ucxjShgMgAygJUgZncmFudHM6TQoGYWNjZXNzEh4uZ29vZ2xlLnByb3RvYnVmLk1ldGhvZE9wdGlvbnMY0YYDIAEoCzITLmF1dGgudjEuQWNjZXNzUnVsZVIGYWNjZXNzYgZwcm90bzM", [file_google_protobuf_descriptor]);
 
 /**
- * Declarative per-RPC ACL, carried by the contract itself. Default-deny:
- * EVERY method must be annotated — either public (the auth surface) or with
- * a minimum role — and a CI test fails the build otherwise.
+ * Per-RPC ACL, carried by the contract. Default-deny: every method must be
+ * annotated — public, or with a required permission — and a CI test fails the
+ * build otherwise.
  *
  * @generated from message auth.v1.AccessRule
  */
 export type AccessRule = Message<"auth.v1.AccessRule"> & {
   /**
-   * Minimum role required; callers with a higher role pass.
+   * The permission this RPC requires, e.g. "notes.write". Free-form: the
+   * catalogue is just the union of these strings across all RPCs, nothing to
+   * maintain on the side. A caller passes if any of its role's grant patterns
+   * matches this string.
    *
-   * @generated from field: auth.v1.Role minimum_role = 1;
+   * @generated from field: string permission = 1;
    */
-  minimumRole: Role;
+  permission: string;
 
   /**
-   * Explicitly unauthenticated (sign-up, log-in, ...).
+   * Explicitly unauthenticated (sign-up, log-in, ...); mounted without the
+   * auth interceptor.
    *
    * @generated from field: bool public = 2;
    */
@@ -45,10 +49,12 @@ export const AccessRuleSchema: GenMessage<AccessRule> = /*@__PURE__*/
   messageDesc(file_auth_v1_access, 0);
 
 /**
- * The one place role names exist. Token claims and DB rows store the
- * lower-cased name without the prefix ("user", "admin") — the middlewares
- * map back via "ROLE_" + upper(claim). Enum numbers define the hierarchy:
- * a higher role passes a lower requirement.
+ * Roles are the closed set of identities; a token carries one role name
+ * (lower-cased, "user"/"admin"). Permissions are NOT an enum — they are the
+ * free-form strings the RPCs declare (see AccessRule.permission). Each role
+ * grants a set of glob patterns over those strings, right here in the
+ * contract, so a brand-new permission under an existing prefix is covered
+ * automatically with no edit here.
  *
  * @generated from enum auth.v1.Role
  */
@@ -64,6 +70,8 @@ export enum Role {
   USER = 1,
 
   /**
+   * "*" matches everything, including permissions added later.
+   *
    * @generated from enum value: ROLE_ADMIN = 2;
    */
   ADMIN = 2,
@@ -76,8 +84,14 @@ export const RoleSchema: GenEnum<Role> = /*@__PURE__*/
   enumDesc(file_auth_v1_access, 0);
 
 /**
+ * @generated from extension: repeated string grants = 50002;
+ */
+export const grants: GenExtension<EnumValueOptions, string[]> = /*@__PURE__*/
+  extDesc(file_auth_v1_access, 0);
+
+/**
  * @generated from extension: auth.v1.AccessRule access = 50001;
  */
 export const access: GenExtension<MethodOptions, AccessRule> = /*@__PURE__*/
-  extDesc(file_auth_v1_access, 0);
+  extDesc(file_auth_v1_access, 1);
 

@@ -45,8 +45,9 @@ const (
 type NoteServiceClient interface {
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
 	ListNotes(context.Context, *connect.Request[v1.ListNotesRequest]) (*connect.Response[v1.ListNotesResponse], error)
-	// The option gates the role; ownership (owner-or-admin) is business logic
-	// in the handler — claims are in the context, put there by the middleware.
+	// The option gates "notes.delete" (which owners have); deleting someone
+	// else's requires the elevated "admin.notes.delete_any", checked in the
+	// handler — claims are in the context, put there by the middleware.
 	DeleteNote(context.Context, *connect.Request[v1.DeleteNoteRequest]) (*connect.Response[v1.DeleteNoteResponse], error)
 }
 
@@ -108,8 +109,9 @@ func (c *noteServiceClient) DeleteNote(ctx context.Context, req *connect.Request
 type NoteServiceHandler interface {
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
 	ListNotes(context.Context, *connect.Request[v1.ListNotesRequest]) (*connect.Response[v1.ListNotesResponse], error)
-	// The option gates the role; ownership (owner-or-admin) is business logic
-	// in the handler — claims are in the context, put there by the middleware.
+	// The option gates "notes.delete" (which owners have); deleting someone
+	// else's requires the elevated "admin.notes.delete_any", checked in the
+	// handler — claims are in the context, put there by the middleware.
 	DeleteNote(context.Context, *connect.Request[v1.DeleteNoteRequest]) (*connect.Response[v1.DeleteNoteResponse], error)
 }
 
