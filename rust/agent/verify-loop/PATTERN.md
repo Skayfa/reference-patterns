@@ -4,6 +4,7 @@ language: rust
 category: agent
 tags: [rust, ai-agent, verification, self-correction, reliability, retry]
 description: Verify-then-retry combinator — check an output against ground truth, feed failures back and retry until it passes or a budget runs out; agent-agnostic, no dependencies
+origin: agentic-lab, 2026-07
 test: cargo test
 ---
 

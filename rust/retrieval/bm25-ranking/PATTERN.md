@@ -4,6 +4,7 @@ language: rust
 category: retrieval
 tags: [rust, retrieval, bm25, ranking, search, rag]
 description: Lexical retrieval with BM25 in ~40 lines of std — chunk text, rank by relevance (IDF + length normalization), no embeddings, no dependencies
+origin: agentic-lab, 2026-07
 test: cargo test
 ---
 

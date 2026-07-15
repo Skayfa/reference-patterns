@@ -9,7 +9,7 @@ consumed from other projects through MCP.
 
 ```text
 <language>/<category>/<pattern-slug>/
-├── PATTERN.md    # frontmatter (name, tags, description, test command) + Problem/Solution/Key points
+├── PATTERN.md    # frontmatter (name, tags, description, origin, test command) + Problem/Solution/Path/Key points
 └── ...           # runnable code with its own manifest (package.json, go.mod, buf.yaml, ...)
 ```
 
@@ -48,8 +48,9 @@ Exposed tools: `fetch_reference_docs` (returns `llms.txt`),
 
 1. Copy `templates/pattern/PATTERN.md` into `<language>/<category>/<slug>/`.
 2. Fill the frontmatter — `description` is what MCP search matches against;
-   `test` is the command `scripts/test-all.sh` runs from the pattern directory
-   (`none` for docs-only patterns).
+   `origin` records where the pattern was distilled from (source project +
+   month); `test` is the command `scripts/test-all.sh` runs from the pattern
+   directory (`none` for docs-only patterns).
 3. Add the runnable code with its own manifest. TypeScript patterns are picked
    up by the workspace glob automatically — use `"catalog:"` versions (add new
    entries to `pnpm-workspace.yaml`) and `test: pnpm test`.

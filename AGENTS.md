@@ -36,17 +36,22 @@ the new versions in one pass.
 
 ## Flow par type
 
-**New pattern** (the only flow here):
+**New pattern** (the only flow here — usually driven by the `distill` skill
+from the source project's session):
 
 1. Copy `templates/pattern/PATTERN.md` to `<language>/<category>/<slug>/PATTERN.md`.
 2. Fill frontmatter: `name` (= slug), `language` (= top-level dir), `category`,
-   `tags`, `description` (one line, drives MCP search), `test`.
+   `tags`, `description` (one line, drives MCP search), `origin` (source
+   project + month; sillon subject slug if any; `built in-repo` for
+   explorations), `test`.
 3. Write the runnable example — self-contained, no cross-pattern imports.
    TypeScript: the workspace glob (`typescript/*/*`) picks the package up
    automatically; use `"catalog:"` versions (add new deps to the catalog in
    `pnpm-workspace.yaml`) and `test: pnpm test`. Go: add the module to
    `go.work`.
-4. Body: Problem → Solution → Key points (the non-obvious bits) → How to run.
+4. Body: Problem → Solution → Path (what was tried and rejected before the
+   final solution — from real history, never reconstructed) → Key points
+   (the non-obvious bits) → How to run.
 5. `./scripts/generate-llms.sh` to regenerate the index (commit `llms.txt`).
 6. `./scripts/test-all.sh` must pass.
 

@@ -4,6 +4,7 @@ language: rust
 category: agent
 tags: [rust, ai-agent, tool-calling, ollama, llm, function-calling]
 description: A minimal AI agent with tool-calling in Rust against a local (free) Ollama model — the tool-use loop behind a trait, tested deterministically with a scripted mock (no network, no model)
+origin: built in-repo, 2026-07
 test: cargo test && cargo build --examples
 ---
 

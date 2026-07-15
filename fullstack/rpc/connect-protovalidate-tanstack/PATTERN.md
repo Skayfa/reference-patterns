@@ -4,6 +4,7 @@ language: fullstack
 category: rpc
 tags: [go, connectrpc, protobuf, protovalidate, buf, react, tanstack-form, tanstack-query, zod]
 description: End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, and code-driven error handling caught at the right place (Suspense + error boundary for reads, server violations onto form fields via onSubmitAsync, transient-only retries, panic shield) — tested on both sides without a network
+origin: built in-repo, 2026-07
 test: (cd server && go test ./...) && (cd web && pnpm test)
 ---
 
@@ -97,6 +98,33 @@ or mirrors it:
   swaps the transport for `createRouterTransport` — a real Connect service
   running in memory — so serialization and error semantics are exercised
   for real.
+
+## Path
+
+Built iteratively in-repo; the rejected steps (all in git history) are the
+lesson:
+
+- **Client validation started as a zod schema mirroring the proto rules** —
+  worked, but every rule existed twice and drifted silently. Replaced by
+  protovalidate-es (`createStandardSchema`) evaluating the proto's own CEL
+  rules in the browser: the mirror is deleted, form values become the proto
+  message itself.
+- **Server violations were first mapped onto fields by hand** — an
+  escape-hatch cast, then `formApi.setFieldMeta` (`errorMap.onServer` +
+  `errorSourceMap`), which typed correctly and auto-cleared on edit. Both
+  were plumbing the framework already ships: `onSubmitAsync` returning the
+  documented `{ form, fields }` shape lets TanStack Form distribute field
+  errors itself — the whole mapping layer got deleted.
+- **Error handling started inside each form** (try/catch + manual error
+  state) — extracted into `useFormMutation` in the composition layer, so a
+  form declares `validators` and nothing else; reads moved from manual
+  loading/error branches to `useSuspenseQuery` + `RpcBoundary`.
+- **The submit button was hard-`disabled`** — which deadlocked
+  resubmit-after-rejection. `aria-disabled` (the docs' a11y guidance) is
+  what makes the recovery flow possible at all.
+- **Duplicate-email was first simulated in web tests** — made real by giving
+  the server business violations that reuse the exact `Violations` detail
+  shape protovalidate uses, so the frontend maps them with zero extra code.
 
 ## Key points
 
