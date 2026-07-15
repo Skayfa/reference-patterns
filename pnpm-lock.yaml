@@ -15,6 +15,9 @@ catalogs:
     '@connectrpc/connect':
       specifier: ^2.1.0
       version: 2.1.2
+    '@connectrpc/connect-node':
+      specifier: ^2.1.0
+      version: 2.1.2
     '@connectrpc/connect-query':
       specifier: ^2.2.0
       version: 2.2.0
@@ -36,15 +39,24 @@ catalogs:
     '@testing-library/user-event':
       specifier: ^14.6.0
       version: 14.6.1
+    '@types/node':
+      specifier: ^26.1.0
+      version: 26.1.1
     '@types/react':
       specifier: ^19.2.0
       version: 19.2.17
     '@types/react-dom':
       specifier: ^19.2.0
       version: 19.2.3
+    '@vitejs/plugin-react':
+      specifier: ^6.0.0
+      version: 6.0.3
     jsdom:
       specifier: ^29.0.0
       version: 29.1.1
+    paseto-ts:
+      specifier: ^2.0.0
+      version: 2.0.6
     react:
       specifier: ^19.2.0
       version: 19.2.7
@@ -57,9 +69,15 @@ catalogs:
     react-error-boundary:
       specifier: ^6.1.0
       version: 6.1.2
+    tsx:
+      specifier: ^4.23.0
+      version: 4.23.1
     typescript:
       specifier: ^5.7.0
       version: 5.9.3
+    vite:
+      specifier: ^8.1.0
+      version: 8.1.4
     vitest:
       specifier: ^4.1.0
       version: 4.1.10
@@ -67,6 +85,114 @@ catalogs:
 importers:
 
   .: {}
+
+  fullstack/auth/paseto-cross-language/e2e:
+    dependencies:
+      '@bufbuild/protobuf':
+        specifier: 'catalog:'
+        version: 2.12.1
+      '@connectrpc/connect':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)
+      '@connectrpc/connect-node':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
+
+  fullstack/auth/paseto-cross-language/verifier-ts:
+    dependencies:
+      '@bufbuild/protobuf':
+        specifier: 'catalog:'
+        version: 2.12.1
+      '@connectrpc/connect':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)
+      '@connectrpc/connect-node':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))
+      paseto-ts:
+        specifier: 'catalog:'
+        version: 2.0.6
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
+
+  fullstack/auth/paseto-cross-language/web:
+    dependencies:
+      '@bufbuild/protobuf':
+        specifier: 'catalog:'
+        version: 2.12.1
+      '@connectrpc/connect':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)
+      '@connectrpc/connect-query':
+        specifier: 'catalog:'
+        version: 2.2.0(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))(@tanstack/query-core@5.101.2)(@tanstack/react-query@5.101.2(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@connectrpc/connect-web':
+        specifier: 'catalog:'
+        version: 2.1.2(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@testing-library/user-event':
+        specifier: 'catalog:'
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.0.3(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
+      jsdom:
+        specifier: 'catalog:'
+        version: 29.1.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
 
   fullstack/rpc/connect-protovalidate-tanstack/web:
     dependencies:
@@ -124,7 +250,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(jsdom@29.1.1)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
 
   typescript/react/react-call-confirm:
     dependencies:
@@ -133,7 +259,7 @@ importers:
         version: 19.2.7
       react-call:
         specifier: 'catalog:'
-        version: 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))
+        version: 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
       react-dom:
         specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
@@ -161,7 +287,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(jsdom@29.1.1)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
 
   typescript/testing/vitest-unit-mocking:
     devDependencies:
@@ -170,7 +296,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.10(jsdom@29.1.1)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))
+        version: 4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
 
 packages:
 
@@ -225,6 +351,13 @@ packages:
     resolution: {integrity: sha512-tD08DwGrHIV88khLz1Kdz9DYUwEo1TsoepaIg7/B/zd//AymaTx67kvCS1jlkcG/+vgQaSOl6f0HCE3sL8vI7w==}
     peerDependencies:
       '@bufbuild/protobuf': ^2.8.0
+
+  '@connectrpc/connect-node@2.1.2':
+    resolution: {integrity: sha512-+i/aAOpsI8sIx1mbYp6d99zvxaUSF6t/jP9Ux9maAmjsZPgmIQ3JuIeYi0zJIP9zlCnBlJjkpPosshCgdRuThQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.7.0
+      '@connectrpc/connect': 2.1.2
 
   '@connectrpc/connect-query-core@2.2.0':
     resolution: {integrity: sha512-t/CuxW/vP84y2iyS+PnbAnBwgOTYMzHXTSoBUKC1vIn706aNiZP40Y6mGJybglyH63RhAPcOdUgzG7DjzaAHCw==}
@@ -567,6 +700,36 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
+  '@stablelib/binary@2.0.1':
+    resolution: {integrity: sha512-U9iAO8lXgEDONsA0zPPSgcf3HUBNAqHiJmSHgZz62OvC3Hi2Bhc5kTnQ3S1/L+sthDTHtCMhcEiklmIly6uQ3w==}
+
+  '@stablelib/blake2b@2.0.1':
+    resolution: {integrity: sha512-kBN4i9FHpkTEVrHwKtb1ZjI6QwyoK8emY9TaLcHHFSZkw2FN9Td8Js9mU2U10q+EZ3Mp6z78QgdPDwJXbc3Dtw==}
+
+  '@stablelib/chacha@2.0.1':
+    resolution: {integrity: sha512-lS1FqtNqofxe2vLkRsLli2m3x/XanUyAYRphLhdHumKeIsLbjbCXdCq3Pf/eWiO7G3QlSG5ViqnoVjktzfLWMg==}
+
+  '@stablelib/ed25519@2.1.0':
+    resolution: {integrity: sha512-8GLWoJur9nJiErABKHs5MjceSiYJJ2n8QP9k8Q5x6GWU2y5oAQ6qzPh8kCgQy5aHlUxcmRA1frQ5Gu2bHoIDPw==}
+
+  '@stablelib/hash@2.0.0':
+    resolution: {integrity: sha512-u3WPSqGido8lwJuMcrBgM5K54LrPGhkWAdtsyccf7dGsLixAZUds77zOAbu7bvKPwQlmoByH0txBi5rTmEKuHg==}
+
+  '@stablelib/int@2.0.1':
+    resolution: {integrity: sha512-Ht63fQp3wz/F8U4AlXEPb7hfJOIILs8Lq55jgtD7KueWtyjhVuzcsGLSTAWtZs3XJDZYdF1WcSKn+kBtbzupww==}
+
+  '@stablelib/random@2.0.1':
+    resolution: {integrity: sha512-W6GAtXEEs7r+dSbuBsvoFmlyL3gLxle41tQkjKu17dDWtDdjhVUbtRfRCQcCUeczwkgjQxMPopgwYEvxXtHXGw==}
+
+  '@stablelib/sha512@2.0.1':
+    resolution: {integrity: sha512-DUNe5cbnoH3sSIN+MG04RvTCLXtkbyy/SnQxiNO+GgF/KSXkkUSlF6mUVvCUdZBZ2X3NgogR+tAvaRSn8wxnLw==}
+
+  '@stablelib/wipe@2.0.1':
+    resolution: {integrity: sha512-1eU2K9EgOcV4qc9jcP6G72xxZxEm5PfeI5H55l08W95b4oRJaqhmlWRc4xZAm6IVSKhVNxMi66V67hCzzuMTAg==}
+
+  '@stablelib/xchacha20@2.0.1':
+    resolution: {integrity: sha512-k55pNv7gIM4mUPU00+nJYTxKiUVNwAtsgrridC0aIU5cVbw9u6qP99x8ENu5eiwOEhZUNg+p3tTOLooCeAOJQA==}
+
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -652,6 +815,9 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  '@types/node@26.1.1':
+    resolution: {integrity: sha512-nxAkRSVkN1Y0JC1W8ky/fTfkGsMmcrRsbx+3XoZE+rMOX71kLYTV7fLXpqud1GpbpP5TuffXFqfX7fH2GgZREw==}
+
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
@@ -659,6 +825,19 @@ packages:
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
+
+  '@vitejs/plugin-react@6.0.3':
+    resolution: {integrity: sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0
+      babel-plugin-react-compiler: ^1.0.0
+      vite: ^8.0.0
+    peerDependenciesMeta:
+      '@rolldown/plugin-babel':
+        optional: true
+      babel-plugin-react-compiler:
+        optional: true
 
   '@vitest/expect@4.1.10':
     resolution: {integrity: sha512-YsCn+qAk1GWjQOWFEsEcL2gNQ0zmVmQu3T03qP6UyjhtmdtwtbuI+DASn/7iQB3HGTXkdBwGddzxPlmiql5vlA==}
@@ -905,6 +1084,9 @@ packages:
   parse5@8.0.1:
     resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
+  paseto-ts@2.0.6:
+    resolution: {integrity: sha512-Ul3AzoCcS4uA6jF+GW2zYUxZY78xsqCbfxdv2Khk/30hDxAzcvsWQjp4uW1XcbkrO9zNrPbdBv4HiXgJigWLVA==}
+
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
@@ -1038,6 +1220,9 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
   undici@7.28.0:
     resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
@@ -1213,6 +1398,11 @@ snapshots:
     dependencies:
       '@bufbuild/cel': 0.4.0(@bufbuild/protobuf@2.12.1)
       '@bufbuild/protobuf': 2.12.1
+
+  '@connectrpc/connect-node@2.1.2(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))':
+    dependencies:
+      '@bufbuild/protobuf': 2.12.1
+      '@connectrpc/connect': 2.1.2(@bufbuild/protobuf@2.12.1)
 
   '@connectrpc/connect-query-core@2.2.0(@bufbuild/protobuf@2.12.1)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.12.1))(@tanstack/query-core@5.101.2)':
     dependencies:
@@ -1422,6 +1612,50 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
+  '@stablelib/binary@2.0.1':
+    dependencies:
+      '@stablelib/int': 2.0.1
+
+  '@stablelib/blake2b@2.0.1':
+    dependencies:
+      '@stablelib/binary': 2.0.1
+      '@stablelib/hash': 2.0.0
+      '@stablelib/wipe': 2.0.1
+
+  '@stablelib/chacha@2.0.1':
+    dependencies:
+      '@stablelib/binary': 2.0.1
+      '@stablelib/wipe': 2.0.1
+
+  '@stablelib/ed25519@2.1.0':
+    dependencies:
+      '@stablelib/random': 2.0.1
+      '@stablelib/sha512': 2.0.1
+      '@stablelib/wipe': 2.0.1
+
+  '@stablelib/hash@2.0.0': {}
+
+  '@stablelib/int@2.0.1': {}
+
+  '@stablelib/random@2.0.1':
+    dependencies:
+      '@stablelib/binary': 2.0.1
+      '@stablelib/wipe': 2.0.1
+
+  '@stablelib/sha512@2.0.1':
+    dependencies:
+      '@stablelib/binary': 2.0.1
+      '@stablelib/hash': 2.0.0
+      '@stablelib/wipe': 2.0.1
+
+  '@stablelib/wipe@2.0.1': {}
+
+  '@stablelib/xchacha20@2.0.1':
+    dependencies:
+      '@stablelib/binary': 2.0.1
+      '@stablelib/chacha': 2.0.1
+      '@stablelib/wipe': 2.0.1
+
   '@standard-schema/spec@1.1.0': {}
 
   '@tanstack/devtools-event-client@0.4.4': {}
@@ -1508,6 +1742,10 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  '@types/node@26.1.1':
+    dependencies:
+      undici-types: 8.3.0
+
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
       '@types/react': 19.2.17
@@ -1515,6 +1753,11 @@ snapshots:
   '@types/react@19.2.17':
     dependencies:
       csstype: 3.2.3
+
+  '@vitejs/plugin-react@6.0.3(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -1525,13 +1768,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.10(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))':
+  '@vitest/mocker@4.1.10(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.1.4(esbuild@0.28.1)(tsx@4.23.1)
+      vite: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)
 
   '@vitest/pretty-format@4.1.10':
     dependencies:
@@ -1635,7 +1878,6 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.1
       '@esbuild/win32-ia32': 0.28.1
       '@esbuild/win32-x64': 0.28.1
-    optional: true
 
   estree-walker@3.0.3:
     dependencies:
@@ -1757,6 +1999,12 @@ snapshots:
     dependencies:
       entities: 8.0.0
 
+  paseto-ts@2.0.6:
+    dependencies:
+      '@stablelib/blake2b': 2.0.1
+      '@stablelib/ed25519': 2.1.0
+      '@stablelib/xchacha20': 2.0.1
+
   pathe@2.0.3: {}
 
   picocolors@1.1.1: {}
@@ -1777,12 +2025,12 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  react-call@2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1)):
+  react-call@2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)):
     dependencies:
       react: 19.2.7
     optionalDependencies:
       react-dom: 19.2.7(react@19.2.7)
-      vite: 8.1.4(esbuild@0.28.1)(tsx@4.23.1)
+      vite: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)
 
   react-dom@19.2.7(react@19.2.7):
     dependencies:
@@ -1878,9 +2126,10 @@ snapshots:
       esbuild: 0.28.1
     optionalDependencies:
       fsevents: 2.3.3
-    optional: true
 
   typescript@5.9.3: {}
+
+  undici-types@8.3.0: {}
 
   undici@7.28.0: {}
 
@@ -1888,7 +2137,7 @@ snapshots:
     dependencies:
       react: 19.2.7
 
-  vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1):
+  vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1):
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.5
@@ -1896,14 +2145,15 @@ snapshots:
       rolldown: 1.1.5
       tinyglobby: 0.2.17
     optionalDependencies:
+      '@types/node': 26.1.1
       esbuild: 0.28.1
       fsevents: 2.3.3
       tsx: 4.23.1
 
-  vitest@4.1.10(jsdom@29.1.1)(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1)):
+  vitest@4.1.10(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(vite@8.1.4(esbuild@0.28.1)(tsx@4.23.1))
+      '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -1920,9 +2170,10 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.1.4(esbuild@0.28.1)(tsx@4.23.1)
+      vite: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
+      '@types/node': 26.1.1
       jsdom: 29.1.1
     transitivePeerDependencies:
       - msw
