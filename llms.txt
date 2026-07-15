@@ -19,6 +19,8 @@
 ## Rust
 
 - [ollama-tool-calling](https://github.com/Skayfa/reference-patterns/blob/main/rust/agent/ollama-tool-calling/PATTERN.md): A minimal AI agent with tool-calling in Rust against a local (free) Ollama model — the tool-use loop behind a trait, tested deterministically with a scripted mock (no network, no model)
+- [verify-loop](https://github.com/Skayfa/reference-patterns/blob/main/rust/agent/verify-loop/PATTERN.md): Verify-then-retry combinator — check an output against ground truth, feed failures back and retry until it passes or a budget runs out; agent-agnostic, no dependencies
+- [bm25-ranking](https://github.com/Skayfa/reference-patterns/blob/main/rust/retrieval/bm25-ranking/PATTERN.md): Lexical retrieval with BM25 in ~40 lines of std — chunk text, rank by relevance (IDF + length normalization), no embeddings, no dependencies
 
 ## TypeScript
 

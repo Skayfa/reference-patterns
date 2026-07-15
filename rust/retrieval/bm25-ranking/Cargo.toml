@@ -1,0 +1,8 @@
+[package]
+name = "bm25-ranking"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Zero dependencies — BM25 is ~40 lines of std.
+[dependencies]
