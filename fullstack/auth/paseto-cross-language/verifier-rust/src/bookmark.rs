@@ -87,11 +87,14 @@ impl BookmarkService for BookmarkServiceImpl {
             .await
             .map_err(internal)?
             .ok_or_else(|| Status::not_found("bookmark not found"))?;
-        // Ownership is business logic, on top of the proto-declared role gate.
+        // Ownership is business logic on top of the "bookmarks.delete" gate the
+        // interceptor already enforced: the owner may delete their own; deleting
+        // anyone's requires the elevated, contract-declared permission.
         let is_owner = existing.user_id == claims.subject;
-        let is_admin = self.rules.level(&claims.role) >= self.rules.level("admin");
-        if !is_owner && !is_admin {
-            return Err(Status::permission_denied("only the owner or an admin can delete a bookmark"));
+        if !is_owner && !self.rules.authorized(&claims.role, "admin.bookmarks.delete_any") {
+            return Err(Status::permission_denied(
+                "permission required: admin.bookmarks.delete_any",
+            ));
         }
         self.store.delete(&existing.id).await.map_err(internal)?;
         Ok(Response::new(DeleteBookmarkResponse {}))
