@@ -25,12 +25,17 @@ language.
   `buf.gen.*.yaml` per consumer + `Makefile` → `make generate` rebuilds every
   derived artifact): `auth.v1.AuthService` and `demo.v1.ProtectedService`,
   implemented by every server, with `buf.validate` rules on the requests.
-- **Per-RPC permissions live in the contract**: `auth/v1/access.proto`
-  declares the `Role` enum (the hierarchy is the enum numbers) and the
-  `(auth.v1.access)` method option — `{minimum_role: ROLE_ADMIN}` or
-  `{public: true}`. Every server's middleware enforces it; handlers never
-  hand-check roles. **Default-deny**: a CI test
-  (`internal/protected/acl_test.go`) fails if any RPC lacks an annotation.
+- **RBAC lives in the contract**: an RPC declares the permission it needs as
+  a free-form string — `option (auth.v1.access) = {permission: "notes.write"}`
+  — and there is **no permission enum to maintain**; the catalogue is just the
+  union of those strings. Roles declare the permission **glob patterns** they
+  grant, as `(auth.v1.grants)` options on the `Role` enum values (`user →
+  "notes.*", "bookmarks.*", "profile.read"`; `admin → "*"`). Every server
+  resolves `role → grants` from the contract and enforces
+  `authorized(role, permission)` with the same glob match; handlers never
+  hand-check roles. **Default-deny**: a CI test per language fails if any RPC
+  lacks a permission/public; a "no dead grant" test (Rust, over the full
+  descriptor set) fails on a pattern that matches nothing (a typo).
 - `issuer-go/` is the only place tokens are minted, and the only service
   with storage: connect-go, argon2id, SQLite. The schema is declared once in
   `internal/store/migrations/` (applied by goose on open), the queries once
@@ -127,11 +132,20 @@ writes, they are one service — merge them, or move the table's ownership.
   is additive-only and its per-query code is hand-written; goose+sqlc keeps
   exactly two hand-written artifacts per table (migration, queries) and
   generates the rest, with destructive migrations possible.
-- v1 hand-checked `role == "admin"` in each handler; replaced first with a
-  string option on the RPC, then with the `Role` enum + `minimum_role`
-  hierarchy + default-deny gate once "how do I declare which permission a
-  query needs" became the design driver. Go and TS read the option via
-  their protobuf runtimes; **prost discards custom options at codegen**, so
+- The ACL itself went through three shapes. v1 hand-checked `role == "admin"`
+  in each handler. v2 moved the rule into the contract as a linear `Role`
+  hierarchy (`minimum_role`, `admin ≥ user` by enum number) — clean but it
+  can't express a role with capabilities on one axis and not another. v3 is
+  proper RBAC: a `Role` linear order buys nothing, so RPCs require a
+  **permission string** and roles grant **glob patterns**. The decisive
+  constraint was maintenance — an enum of permissions is a parallel registry
+  to update on every capability; free-form strings + `notes.*`/`*` grants mean
+  a new permission under an existing resource is authorized with **zero**
+  edits outside the RPC. The trade-off (strings aren't typo-checked like an
+  enum) is covered by the "no dead grant" test and the naming convention
+  (elevated cross-user permissions live under `admin.*`, outside resource
+  prefixes). Go and TS read the options via their protobuf runtimes;
+  **prost discards custom options at codegen**, so
   Rust reflects over a committed descriptor set (`buf build -o`) with
   prost-reflect. And tonic interceptors never see which RPC is called, so
   Rust enforces in a one-line handler guard instead of middleware.
@@ -156,12 +170,17 @@ writes, they are one service — merge them, or move the table's ownership.
 - Verification is stateless, so logout cannot recall live access tokens —
   the mitigation is the 10-minute TTL plus refresh rotation with
   family-wide reuse revocation (see `RefreshToken.FamilyID`).
-- The ACL has one source of truth: the proto annotation. Change
-  `{minimum_role: ...}` in the contract, run `make generate`, and all three
-  servers enforce the new rule — no handler edits. The hierarchy is just
-  the enum numbers, so "admin passes user-level RPCs" costs one `<`.
-  Default-deny means forgetting to annotate a new RPC is a failing test,
-  not a silent hole.
+- RBAC has one source of truth: the contract. An RPC's `{permission: "..."}`
+  and a role's `(auth.v1.grants)` patterns are read by all three servers with
+  the same three-line glob match (`*`, exact, `prefix.*`). Adding a permission
+  is one string on the RPC; if it falls under a role's existing prefix (or
+  admin's `*`) it is authorized with no other edit — the point of the design.
+  Default-deny means forgetting to annotate a new RPC is a failing test, and
+  the "no dead grant" test catches a mistyped pattern. Elevated cross-user
+  capabilities (delete anyone's) are named under `admin.*` so they sit outside
+  a resource prefix and stay with `*`; the handler checks that permission
+  (e.g. `authorized(role, "admin.notes.delete_any")`) on top of the coarse
+  gate — no role name is ever hard-coded.
 - Public RPCs (`public: true` — the whole `AuthService`) are mounted on a
   handler **without** the auth interceptor; the interceptor always demands a
   token, so a public rule reaching it means the RPC was mounted in the wrong
