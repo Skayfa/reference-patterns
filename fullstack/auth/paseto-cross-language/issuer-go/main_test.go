@@ -159,7 +159,7 @@ func TestEveryRPCDeclaresAnAccessRule(t *testing.T) {
 				method := methods.Get(j)
 				procedure := "/" + string(service.FullName()) + "/" + string(method.Name())
 				if protected.AccessRuleFor(procedure) == nil {
-					t.Errorf("%s has no (auth.v1.access) rule — annotate it public or with a minimum_role", procedure)
+					t.Errorf("%s has no (auth.v1.access) rule — annotate it with a permission or public", procedure)
 				}
 				checked++
 			}
@@ -170,6 +170,11 @@ func TestEveryRPCDeclaresAnAccessRule(t *testing.T) {
 		t.Fatal("gate found no RPCs to check — registry filter is wrong")
 	}
 }
+
+// The "no dead grant" check (a pattern matching no permission is a typo) needs
+// the WHOLE contract's permissions — bookmarks are served by Rust and aren't
+// in this binary's registry — so it lives in verifier-rust/src/access.rs,
+// which reads the full descriptor set.
 
 // A stolen refresh token replayed concurrently with the legitimate client
 // must not let both through: the conditional-UPDATE rotation guard admits

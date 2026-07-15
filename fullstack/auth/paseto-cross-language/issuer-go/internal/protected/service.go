@@ -23,8 +23,9 @@ import (
 type claimsKey struct{}
 
 // AccessRuleFor reads the (auth.v1.access) option declared on the RPC in
-// the proto — the contract itself says who may call it. nil = the RPC was
-// never annotated, which the default-deny posture treats as forbidden.
+// the proto — the contract itself says which permission it requires. nil =
+// the RPC declares neither a permission nor public, which the default-deny
+// posture treats as forbidden.
 func AccessRuleFor(procedure string) *authv1.AccessRule {
 	name := strings.ReplaceAll(strings.TrimPrefix(procedure, "/"), "/", ".")
 	desc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(name))
@@ -40,17 +41,58 @@ func AccessRuleFor(procedure string) *authv1.AccessRule {
 		return nil
 	}
 	rule, _ := proto.GetExtension(opts, authv1.E_Access).(*authv1.AccessRule)
-	if rule.GetMinimumRole() == authv1.Role_ROLE_UNSPECIFIED && !rule.GetPublic() {
+	if rule.GetPermission() == "" && !rule.GetPublic() {
 		return nil
 	}
 	return rule
 }
 
-// RoleLevel maps a token's role claim ("admin") onto the auth.v1.Role
-// hierarchy (ROLE_ADMIN). Unknown claims map to ROLE_UNSPECIFIED and pass
-// nothing.
-func RoleLevel(claim string) authv1.Role {
-	return authv1.Role(authv1.Role_value["ROLE_"+strings.ToUpper(claim)])
+// roleGrants is the role → grant-pattern map, read once from the Role enum's
+// (auth.v1.grants) value options — the contract is the single source of truth.
+var roleGrants = buildRoleGrants()
+
+func buildRoleGrants() map[string][]string {
+	grants := map[string][]string{}
+	values := authv1.Role(0).Descriptor().Values()
+	for i := 0; i < values.Len(); i++ {
+		v := values.Get(i)
+		opts, ok := v.Options().(*descriptorpb.EnumValueOptions)
+		if !ok {
+			continue
+		}
+		patterns, _ := proto.GetExtension(opts, authv1.E_Grants).([]string)
+		// Store under the claim form: lower-cased, no "ROLE_" prefix.
+		name := strings.ToLower(strings.TrimPrefix(string(v.Name()), "ROLE_"))
+		grants[name] = patterns
+	}
+	return grants
+}
+
+// MatchGrant reports whether a grant pattern covers a permission: "*" matches
+// everything, an exact string matches itself, and "prefix.*" matches any
+// permission under "prefix." — so "notes.*" covers "notes.write" and any
+// future "notes.<x>", while "admin.notes.delete_any" stays outside it.
+func MatchGrant(pattern, permission string) bool {
+	switch {
+	case pattern == "*" || pattern == permission:
+		return true
+	case strings.HasSuffix(pattern, ".*"):
+		return strings.HasPrefix(permission, pattern[:len(pattern)-1])
+	default:
+		return false
+	}
+}
+
+// Authorized reports whether a role's grants cover the permission. Role
+// matching is case-insensitive; an unknown role has no grants and passes
+// nothing. Reused by the interceptor and by handler-level elevated checks.
+func Authorized(role, permission string) bool {
+	for _, pattern := range roleGrants[strings.ToLower(role)] {
+		if MatchGrant(pattern, permission) {
+			return true
+		}
+	}
+	return false
 }
 
 // NewAuthInterceptor guards the authenticated services: it always requires a
@@ -84,17 +126,13 @@ func NewAuthInterceptor(verifier *token.Verifier) connect.UnaryInterceptorFunc {
 			case rule.GetPublic():
 				return nil, connect.NewError(connect.CodePermissionDenied,
 					errors.New("public rpc mounted behind the auth interceptor — mount it without one"))
-			case RoleLevel(claims.Role) < rule.GetMinimumRole():
+			case !Authorized(claims.Role, rule.GetPermission()):
 				return nil, connect.NewError(connect.CodePermissionDenied,
-					errors.New(roleName(rule.GetMinimumRole())+" role required"))
+					errors.New("permission required: "+rule.GetPermission()))
 			}
 			return next(context.WithValue(ctx, claimsKey{}, claims), req)
 		}
 	}
-}
-
-func roleName(role authv1.Role) string {
-	return strings.ToLower(strings.TrimPrefix(role.String(), "ROLE_"))
 }
 
 func ClaimsFrom(ctx context.Context) (token.Claims, error) {

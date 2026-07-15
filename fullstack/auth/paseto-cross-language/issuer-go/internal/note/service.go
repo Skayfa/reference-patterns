@@ -12,7 +12,6 @@ import (
 
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/protected"
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/store"
-	authv1 "github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/auth/v1"
 	notev1 "github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/note/v1"
 )
 
@@ -75,12 +74,13 @@ func (s *Service) DeleteNote(
 	if err != nil {
 		return nil, err
 	}
-	// Ownership is business logic, on top of the proto-declared role gate.
+	// Ownership is business logic on top of the "notes.delete" gate the
+	// interceptor already enforced: the owner may delete their own note;
+	// deleting anyone's requires the elevated, contract-declared permission.
 	isOwner := existing.UserID == claims.Subject
-	isAdmin := protected.RoleLevel(claims.Role) >= authv1.Role_ROLE_ADMIN
-	if !isOwner && !isAdmin {
+	if !isOwner && !protected.Authorized(claims.Role, "admin.notes.delete_any") {
 		return nil, connect.NewError(connect.CodePermissionDenied,
-			errors.New("only the owner or an admin can delete a note"))
+			errors.New("permission required: admin.notes.delete_any"))
 	}
 	if err := s.store.DeleteNote(ctx, existing.ID); err != nil {
 		return nil, err
