@@ -1,33 +1,50 @@
 // demo.v1.ProtectedService in TypeScript: the same service Go and Rust
 // implement, verifying the same tokens with the same public key.
+// demo.v1.ProtectedService in TypeScript: the same service Go and Rust
+// implement, verifying the same tokens with the same public key.
 import { getOption } from "@bufbuild/protobuf";
 import type { ConnectRouter, Interceptor } from "@connectrpc/connect";
 import { Code, ConnectError, createContextKey } from "@connectrpc/connect";
 import { type Claims, verifyAccessToken } from "./paseto.js";
-import { Role, access } from "./pb/auth/v1/access_pb.js";
+import { RoleSchema, access, grants } from "./pb/auth/v1/access_pb.js";
 import { ProtectedService } from "./pb/demo/v1/protected_pb.js";
 
 export const SERVED_BY = "ts-connect";
 
 const kClaims = createContextKey<Claims | undefined>(undefined);
 
-// RoleLevel maps a token's role claim ("admin") onto the auth.v1.Role
-// hierarchy (ROLE_ADMIN). Unknown claims map to ROLE_UNSPECIFIED and pass
-// nothing.
-function roleLevel(claim: string): Role {
-  // protobuf-es strips the enum-name prefix: Role.ADMIN, not ROLE_ADMIN.
-  const level = Role[claim.toUpperCase() as keyof typeof Role];
-  return typeof level === "number" ? level : Role.UNSPECIFIED;
+// role claim ("admin") -> its granted glob patterns, read once from the
+// auth.v1.Role enum-value (auth.v1.grants) options — the same contract Go and
+// Rust read.
+const roleGrants: Map<string, string[]> = new Map(
+  RoleSchema.values.map((value) => [
+    value.name.replace(/^ROLE_/, "").toLowerCase(),
+    getOption(value, grants),
+  ]),
+);
+
+// A grant pattern covers a permission if it is "*", equals the permission, or
+// is "prefix.*" and the permission starts with "prefix." — "notes.*" covers
+// "notes.write" and any future "notes.<x>", "admin.notes.delete_any" stays out.
+function matchGrant(pattern: string, permission: string): boolean {
+  if (pattern === "*" || pattern === permission) return true;
+  if (pattern.endsWith(".*")) return permission.startsWith(pattern.slice(0, -1));
+  return false;
+}
+
+// Does the role's grants cover this permission? Case-insensitive role, glob
+// matching identical to Go/Rust. Unknown role -> no grants -> false.
+export function authorized(role: string, permission: string): boolean {
+  return (roleGrants.get(role.toLowerCase()) ?? []).some((p) => matchGrant(p, permission));
 }
 
 // Guards the authenticated services: always requires a valid Bearer PASETO,
-// enforces the minimum role the proto declares ((auth.v1.access) option,
-// default-deny when no rule is declared), and stashes the claims in the
-// handler context. Verification is local: only the public key.
+// enforces the permission the proto declares ((auth.v1.access) option,
+// default-deny when none is declared), and stashes the claims in the handler
+// context. Verification is local: only the public key.
 //
-// Truly public RPCs (public: true) are mounted WITHOUT this interceptor; it
-// is never placed in front of one, so a public rule reaching it is a mount
-// mistake and is refused rather than silently waved through.
+// Truly public RPCs (public: true) are mounted WITHOUT this interceptor; a
+// public rule reaching it is a mount mistake and is refused.
 export function authInterceptor(paserkPublicKey: string): Interceptor {
   return (next) => async (req) => {
     const header = req.header.get("Authorization") ?? "";
@@ -48,12 +65,11 @@ export function authInterceptor(paserkPublicKey: string): Interceptor {
         Code.PermissionDenied,
       );
     }
-    if (rule.minimumRole === Role.UNSPECIFIED) {
+    if (rule.permission === "") {
       throw new ConnectError("no access rule declared for this rpc", Code.PermissionDenied);
     }
-    if (roleLevel(claims.role) < rule.minimumRole) {
-      const name = Role[rule.minimumRole].toLowerCase();
-      throw new ConnectError(`${name} role required`, Code.PermissionDenied);
+    if (!authorized(claims.role, rule.permission)) {
+      throw new ConnectError(`permission required: ${rule.permission}`, Code.PermissionDenied);
     }
     req.contextValues.set(kClaims, claims);
     return next(req);
