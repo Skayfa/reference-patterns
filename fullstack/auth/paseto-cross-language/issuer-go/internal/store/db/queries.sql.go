@@ -93,8 +93,8 @@ func (q *Queries) InsertRefreshToken(ctx context.Context, arg InsertRefreshToken
 	return err
 }
 
-const markRotated = `-- name: MarkRotated :exec
-UPDATE refresh_tokens SET rotated_at = ? WHERE id = ?
+const markRotated = `-- name: MarkRotated :execrows
+UPDATE refresh_tokens SET rotated_at = ? WHERE id = ? AND rotated_at IS NULL
 `
 
 type MarkRotatedParams struct {
@@ -102,9 +102,15 @@ type MarkRotatedParams struct {
 	ID        string
 }
 
-func (q *Queries) MarkRotated(ctx context.Context, arg MarkRotatedParams) error {
-	_, err := q.db.ExecContext(ctx, markRotated, arg.RotatedAt, arg.ID)
-	return err
+// Conditional rotation is the reuse guard: the row moves out of the
+// "pristine" state atomically, and :execrows lets the caller see whether it
+// won the race (1) or a concurrent Refresh already rotated it (0).
+func (q *Queries) MarkRotated(ctx context.Context, arg MarkRotatedParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, markRotated, arg.RotatedAt, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const noteByID = `-- name: NoteByID :one

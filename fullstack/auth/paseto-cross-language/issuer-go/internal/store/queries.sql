@@ -21,8 +21,11 @@ VALUES (?, ?, ?, ?, ?, ?);
 -- name: RefreshTokenByHash :one
 SELECT * FROM refresh_tokens WHERE token_hash = ?;
 
--- name: MarkRotated :exec
-UPDATE refresh_tokens SET rotated_at = ? WHERE id = ?;
+-- Conditional rotation is the reuse guard: the row moves out of the
+-- "pristine" state atomically, and :execrows lets the caller see whether it
+-- won the race (1) or a concurrent Refresh already rotated it (0).
+-- name: MarkRotated :execrows
+UPDATE refresh_tokens SET rotated_at = ? WHERE id = ? AND rotated_at IS NULL;
 
 -- name: RevokeFamily :exec
 UPDATE refresh_tokens SET revoked_at = ? WHERE family_id = ? AND revoked_at IS NULL;

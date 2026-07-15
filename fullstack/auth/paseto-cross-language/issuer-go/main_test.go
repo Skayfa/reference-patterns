@@ -5,13 +5,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/auth"
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/note"
+	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/protected"
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/store"
 	"github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/internal/token"
 	authv1 "github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb/auth/v1"
@@ -125,6 +130,93 @@ func TestFullAuthFlow(t *testing.T) {
 		RefreshToken: next.GetRefreshToken(),
 	})); connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("successor after reuse: want unauthenticated, got %v", err)
+	}
+}
+
+// The default-deny gate: EVERY RPC this server mounts must carry an explicit
+// (auth.v1.access) rule — public or a minimum role. A new RPC without one
+// fails this test instead of silently shipping an unprotected endpoint.
+//
+// It ranges over the registry (excluding infrastructure packages), so a newly
+// added Go-served package is covered automatically — no hand-maintained list.
+// Lives in package main because that's where every mounted service's pb
+// package is imported and thus registered. Services this server does NOT
+// implement aren't in its registry; the whole contract — including the
+// Rust-owned BookmarkService — is gated by the descriptor-set twin in
+// verifier-rust/src/access.rs.
+func TestEveryRPCDeclaresAnAccessRule(t *testing.T) {
+	checked := 0
+	protoregistry.GlobalFiles.RangeFiles(func(file protoreflect.FileDescriptor) bool {
+		pkg := string(file.Package())
+		if strings.HasPrefix(pkg, "google.") || strings.HasPrefix(pkg, "buf.") {
+			return true // skip well-known types and the buf.validate deps
+		}
+		services := file.Services()
+		for i := 0; i < services.Len(); i++ {
+			service := services.Get(i)
+			methods := service.Methods()
+			for j := 0; j < methods.Len(); j++ {
+				method := methods.Get(j)
+				procedure := "/" + string(service.FullName()) + "/" + string(method.Name())
+				if protected.AccessRuleFor(procedure) == nil {
+					t.Errorf("%s has no (auth.v1.access) rule — annotate it public or with a minimum_role", procedure)
+				}
+				checked++
+			}
+		}
+		return true
+	})
+	if checked == 0 {
+		t.Fatal("gate found no RPCs to check — registry filter is wrong")
+	}
+}
+
+// A stolen refresh token replayed concurrently with the legitimate client
+// must not let both through: the conditional-UPDATE rotation guard admits
+// exactly one, and the reuse revokes the whole family.
+func TestConcurrentRefreshDetectsReuse(t *testing.T) {
+	c := newTestClients(t)
+	ctx := context.Background()
+
+	tokens := signUpAndLogIn(t, c, "race@example.com")
+
+	const n = 8
+	var wg sync.WaitGroup
+	results := make([]error, n)
+	start := make(chan struct{})
+	for i := range n {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			_, results[i] = c.auth.Refresh(ctx, connect.NewRequest(&authv1.RefreshRequest{
+				RefreshToken: tokens.GetRefreshToken(),
+			}))
+		}()
+	}
+	close(start)
+	wg.Wait()
+
+	successes := 0
+	for _, err := range results {
+		switch {
+		case err == nil:
+			successes++
+		case connect.CodeOf(err) == connect.CodeUnauthenticated:
+			// expected loser
+		default:
+			t.Fatalf("unexpected refresh error: %v", err)
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("concurrent refresh with the same token: %d succeeded, want exactly 1", successes)
+	}
+	// Reuse was detected, so the family is revoked: even the winner's
+	// successor no longer refreshes.
+	if _, err := c.auth.Refresh(ctx, connect.NewRequest(&authv1.RefreshRequest{
+		RefreshToken: tokens.GetRefreshToken(),
+	})); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("after reuse: want unauthenticated, got %v", err)
 	}
 }
 

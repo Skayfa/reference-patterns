@@ -168,29 +168,71 @@ func (s *Store) RefreshTokenByHash(ctx context.Context, tokenHash string) (Refre
 	if err != nil {
 		return RefreshToken{}, fmt.Errorf("store: parse expires_at: %w", err)
 	}
+	rotatedAt, err := parseNullTime(row.RotatedAt)
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("store: parse rotated_at: %w", err)
+	}
+	revokedAt, err := parseNullTime(row.RevokedAt)
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("store: parse revoked_at: %w", err)
+	}
 	return RefreshToken{
 		ID: row.ID, UserID: row.UserID, FamilyID: row.FamilyID, ExpiresAt: expiresAt,
-		RotatedAt: parseNullTime(row.RotatedAt), RevokedAt: parseNullTime(row.RevokedAt),
+		RotatedAt: rotatedAt, RevokedAt: revokedAt,
 	}, nil
 }
 
-func parseNullTime(v sql.NullString) *time.Time {
+// parseNullTime fails closed: a malformed timestamp is an error, never
+// silently treated as "never rotated / never revoked" — that would disable
+// reuse detection in exactly the corrupted-data case.
+func parseNullTime(v sql.NullString) (*time.Time, error) {
 	if !v.Valid {
-		return nil
+		return nil, nil
 	}
 	t, err := time.Parse(time.RFC3339, v.String)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &t
+	return &t, nil
 }
 
-func (s *Store) MarkRotated(ctx context.Context, id string) error {
-	err := s.q.MarkRotated(ctx, db.MarkRotatedParams{
-		RotatedAt: sql.NullString{String: now(), Valid: true}, ID: id,
+// ErrTokenReuse means the refresh token was already rotated by a concurrent
+// (or replayed) request — the caller should revoke the whole family.
+var ErrTokenReuse = errors.New("store: refresh token already rotated")
+
+// RotateRefreshToken atomically consumes currentID and inserts its successor
+// in one transaction. The conditional UPDATE (rotated_at IS NULL) is the race
+// guard: if it touches no row, another Refresh already rotated this token and
+// we return ErrTokenReuse. Wrapping the mark+insert together means a failed
+// insert rolls the rotation back, so a transient error can't consume a token
+// without issuing its replacement.
+func (s *Store) RotateRefreshToken(
+	ctx context.Context, currentID, userID, familyID, newTokenHash string, expiresAt time.Time,
+) error {
+	tx, err := s.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("store: begin rotate: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	qtx := s.q.WithTx(tx)
+
+	rotated, err := qtx.MarkRotated(ctx, db.MarkRotatedParams{
+		RotatedAt: sql.NullString{String: now(), Valid: true}, ID: currentID,
 	})
 	if err != nil {
 		return fmt.Errorf("store: mark rotated: %w", err)
+	}
+	if rotated == 0 {
+		return ErrTokenReuse
+	}
+	if err := qtx.InsertRefreshToken(ctx, db.InsertRefreshTokenParams{
+		ID: NewID(), UserID: userID, FamilyID: familyID, TokenHash: newTokenHash,
+		CreatedAt: now(), ExpiresAt: expiresAt.UTC().Format(time.RFC3339),
+	}); err != nil {
+		return fmt.Errorf("store: insert successor: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("store: commit rotate: %w", err)
 	}
 	return nil
 }

@@ -20,10 +20,14 @@ function roleLevel(claim: string): Role {
   return typeof level === "number" ? level : Role.UNSPECIFIED;
 }
 
-// Verifies the Bearer PASETO on every request, enforces the minimum role
-// the proto declares for the RPC ((auth.v1.access) option, default-deny
-// when no rule is declared), and stashes the claims in the handler context.
-// Verification is local: only the public key.
+// Guards the authenticated services: always requires a valid Bearer PASETO,
+// enforces the minimum role the proto declares ((auth.v1.access) option,
+// default-deny when no rule is declared), and stashes the claims in the
+// handler context. Verification is local: only the public key.
+//
+// Truly public RPCs (public: true) are mounted WITHOUT this interceptor; it
+// is never placed in front of one, so a public rule reaching it is a mount
+// mistake and is refused rather than silently waved through.
 export function authInterceptor(paserkPublicKey: string): Interceptor {
   return (next) => async (req) => {
     const header = req.header.get("Authorization") ?? "";
@@ -38,14 +42,18 @@ export function authInterceptor(paserkPublicKey: string): Interceptor {
       throw new ConnectError("invalid token", Code.Unauthenticated);
     }
     const rule = getOption(req.method, access);
-    if (!rule.public) {
-      if (rule.minimumRole === Role.UNSPECIFIED) {
-        throw new ConnectError("no access rule declared for this rpc", Code.PermissionDenied);
-      }
-      if (roleLevel(claims.role) < rule.minimumRole) {
-        const name = Role[rule.minimumRole].toLowerCase();
-        throw new ConnectError(`${name} role required`, Code.PermissionDenied);
-      }
+    if (rule.public) {
+      throw new ConnectError(
+        "public rpc mounted behind the auth interceptor — mount it without one",
+        Code.PermissionDenied,
+      );
+    }
+    if (rule.minimumRole === Role.UNSPECIFIED) {
+      throw new ConnectError("no access rule declared for this rpc", Code.PermissionDenied);
+    }
+    if (roleLevel(claims.role) < rule.minimumRole) {
+      const name = Role[rule.minimumRole].toLowerCase();
+      throw new ConnectError(`${name} role required`, Code.PermissionDenied);
     }
     req.contextValues.set(kClaims, claims);
     return next(req);

@@ -9,6 +9,7 @@ import { BookmarkService } from "./pb/bookmark/v1/bookmark_pb.js";
 // else changes — that is the whole point of the shared contract.
 export function BookmarksPanel({ transport }: { transport: Transport }) {
   const [url, setUrl] = useState("");
+  const [title, setTitle] = useState("");
   const [status, setStatus] = useState("");
   const list = useQuery(BookmarkService.method.listBookmarks, undefined, { transport });
   const create = useMutation(BookmarkService.method.createBookmark, { transport });
@@ -31,14 +32,21 @@ export function BookmarksPanel({ transport }: { transport: Transport }) {
         onSubmit={(e) => {
           e.preventDefault();
           void run(async () => {
-            await create.mutateAsync({ url, title: url });
+            // title is its own field: the contract caps it at 200 chars while
+            // url allows 2048, so reusing url as title would reject long URLs.
+            await create.mutateAsync({ url, title });
             setUrl("");
+            setTitle("");
           });
         }}
       >
         <label>
           New bookmark URL
           <input value={url} onChange={(e) => setUrl(e.target.value)} />
+        </label>
+        <label>
+          Title (optional)
+          <input value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <button type="submit">Add bookmark</button>
       </form>

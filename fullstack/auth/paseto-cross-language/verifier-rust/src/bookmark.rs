@@ -42,10 +42,13 @@ impl BookmarkService for BookmarkServiceImpl {
         let msg = request.into_inner();
         // buf.validate rules from the proto, enforced by hand: Rust has no
         // first-party protovalidate runtime (see PATTERN.md Key points).
-        if msg.url.is_empty() || msg.url.len() > 2048 {
+        // protovalidate counts Unicode characters, not bytes, so use
+        // chars().count() to match the contract for non-ASCII input.
+        let url_len = msg.url.chars().count();
+        if url_len == 0 || url_len > 2048 {
             return Err(Status::invalid_argument("url must be 1..2048 characters"));
         }
-        if msg.title.len() > 200 {
+        if msg.title.chars().count() > 200 {
             return Err(Status::invalid_argument("title must be at most 200 characters"));
         }
         let created = self

@@ -76,8 +76,10 @@ impl AccessRules {
     }
 
     /// Hierarchy level of a role claim; unknown claims level 0 (pass nothing).
+    /// Case-insensitive, matching Go (ROLE_+upper) and TS (toUpperCase): the
+    /// three servers must agree on the same token's role.
     pub fn level(&self, claim_role: &str) -> i32 {
-        self.role_levels.get(claim_role).copied().unwrap_or(0)
+        self.role_levels.get(&claim_role.to_lowercase()).copied().unwrap_or(0)
     }
 
     /// Default-deny enforcement of the proto-declared rule for this method.
@@ -85,8 +87,12 @@ impl AccessRules {
         let Some(rule) = self.by_method.get(method_full_name) else {
             return Err(Status::permission_denied("no access rule declared for this rpc"));
         };
+        // Public RPCs are served without the auth interceptor (like Go's
+        // AuthService); one reaching this per-handler guard is a mount mistake.
         if rule.public {
-            return Ok(());
+            return Err(Status::permission_denied(
+                "public rpc mounted behind the auth interceptor — mount it without one",
+            ));
         }
         if rule.minimum_role == 0 {
             return Err(Status::permission_denied("no access rule declared for this rpc"));
@@ -137,6 +143,17 @@ mod tests {
         );
         // The Rust-owned service is covered by the same contract mechanism.
         assert!(rules.check("bookmark.v1.BookmarkService.CreateBookmark", "user").is_ok());
+    }
+
+    #[test]
+    fn role_matching_is_case_insensitive_like_go_and_ts() {
+        let rules = AccessRules::from_contract();
+        for variant in ["admin", "Admin", "ADMIN"] {
+            assert!(
+                rules.check("demo.v1.ProtectedService.AdminOnly", variant).is_ok(),
+                "role claim {variant:?} should satisfy admin"
+            );
+        }
     }
 
     #[test]

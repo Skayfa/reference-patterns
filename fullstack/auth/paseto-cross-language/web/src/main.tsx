@@ -47,8 +47,15 @@ function Dashboard({
       <button
         type="button"
         onClick={async () => {
-          await logOut.mutateAsync({ refreshToken: session.refreshToken });
-          onSession(null);
+          // Clear the session even if the revoke RPC fails (server down):
+          // the client must not stay logged in with a live token injected.
+          try {
+            await logOut.mutateAsync({ refreshToken: session.refreshToken });
+          } catch (err) {
+            setStatus(`logout could not reach the server: ${ConnectError.from(err).rawMessage}`);
+          } finally {
+            onSession(null);
+          }
         }}
       >
         Log out

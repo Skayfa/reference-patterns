@@ -53,10 +53,16 @@ func RoleLevel(claim string) authv1.Role {
 	return authv1.Role(authv1.Role_value["ROLE_"+strings.ToUpper(claim)])
 }
 
-// NewAuthInterceptor verifies the Bearer PASETO on every request, enforces
-// the minimum role the proto declares for the RPC (default-deny when no
-// rule is declared), and stashes the claims in the context. Verification is
-// local: only the public key.
+// NewAuthInterceptor guards the authenticated services: it always requires a
+// valid Bearer PASETO, enforces the minimum role the proto declares for the
+// RPC (default-deny when no rule is declared), and stashes the claims in the
+// context. Verification is local: only the public key.
+//
+// Truly public RPCs (public: true — the whole AuthService) are mounted on a
+// separate handler WITHOUT this interceptor; see newMux. This interceptor is
+// never placed in front of a public RPC, so it always demands a token. A
+// public rule reaching it is therefore a mount mistake, and is refused rather
+// than silently waved through.
 func NewAuthInterceptor(verifier *token.Verifier) connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -76,7 +82,8 @@ func NewAuthInterceptor(verifier *token.Verifier) connect.UnaryInterceptorFunc {
 				return nil, connect.NewError(connect.CodePermissionDenied,
 					errors.New("no access rule declared for this rpc"))
 			case rule.GetPublic():
-				// explicitly open — nothing to enforce
+				return nil, connect.NewError(connect.CodePermissionDenied,
+					errors.New("public rpc mounted behind the auth interceptor — mount it without one"))
 			case RoleLevel(claims.Role) < rule.GetMinimumRole():
 				return nil, connect.NewError(connect.CodePermissionDenied,
 					errors.New(roleName(rule.GetMinimumRole())+" role required"))

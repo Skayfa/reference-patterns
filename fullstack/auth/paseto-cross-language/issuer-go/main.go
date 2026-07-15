@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	"connectrpc.com/validate"
 
@@ -83,11 +85,17 @@ func envOr(key, fallback string) string {
 
 // seedAdmin makes an admin account exist for demos and e2e without a
 // "first user wins" rule: signup if missing, then promote. Idempotent.
+//
+// The seed calls the service struct directly, bypassing the transport's
+// protovalidate interceptor, so it validates the request against the same
+// contract rules by hand — SEED_ADMIN_* can't create a credential the API
+// itself would reject.
 func seedAdmin(ctx context.Context, authSvc *auth.Service, st *store.Store, email, password string) error {
-	_, err := authSvc.SignUp(ctx, connect.NewRequest(&authv1.SignUpRequest{
-		Email:    email,
-		Password: password,
-	}))
+	req := &authv1.SignUpRequest{Email: email, Password: password}
+	if err := protovalidate.Validate(req); err != nil {
+		return fmt.Errorf("seed admin fails the contract rules: %w", err)
+	}
+	_, err := authSvc.SignUp(ctx, connect.NewRequest(req))
 	if err != nil && connect.CodeOf(err) != connect.CodeAlreadyExists {
 		return err
 	}

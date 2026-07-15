@@ -162,9 +162,17 @@ writes, they are one service — merge them, or move the table's ownership.
   the enum numbers, so "admin passes user-level RPCs" costs one `<`.
   Default-deny means forgetting to annotate a new RPC is a failing test,
   not a silent hole.
+- Public RPCs (`public: true` — the whole `AuthService`) are mounted on a
+  handler **without** the auth interceptor; the interceptor always demands a
+  token, so a public rule reaching it means the RPC was mounted in the wrong
+  place, and all three servers refuse it rather than wave it through. The
+  `public` flag still exists in the contract so the default-deny gate counts
+  those RPCs as deliberately-open rather than un-annotated.
 - Input validation is also contract-declared (`buf.validate` field rules) —
   the Go issuer enforces it with one interceptor; handlers assume shaped
-  input.
+  input. The Rust server has no first-party protovalidate runtime, so it
+  re-checks the same rules by hand, counting Unicode characters (not bytes)
+  to stay byte-for-byte compatible with protovalidate on non-ASCII input.
 - What is hand-written per new entity, once this structure exists: the proto
   messages/RPCs (~15 lines), one goose migration, a handful of sqlc queries,
   and the business logic. Stores, stubs, TS types, front hooks and the ACL

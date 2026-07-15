@@ -95,9 +95,10 @@ func (s *Service) Refresh(
 	if err != nil {
 		return nil, err
 	}
+	// Fast reuse check for the common already-rotated case; the authoritative
+	// guard is the conditional UPDATE in RotateRefreshToken below, which also
+	// closes the race between two concurrent Refresh calls.
 	if current.RotatedAt != nil {
-		// Reuse of an already-exchanged token: someone replayed it. Kill the
-		// whole family so the legitimate successor dies too.
 		if err := s.store.RevokeFamily(ctx, current.FamilyID); err != nil {
 			return nil, err
 		}
@@ -111,14 +112,36 @@ func (s *Service) Refresh(
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.MarkRotated(ctx, current.ID); err != nil {
-		return nil, err
-	}
-	pair, err := s.issuePair(ctx, user, current.FamilyID)
+
+	// Sign is pure (no DB); mint the refresh string, then atomically rotate
+	// the current token and insert this successor in one transaction.
+	access, expiresAt, err := s.signer.Sign(user.ID, user.Role, s.now(), AccessTTL)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&authv1.RefreshResponse{Tokens: pair}), nil
+	refresh, err := newOpaqueToken()
+	if err != nil {
+		return nil, err
+	}
+	err = s.store.RotateRefreshToken(
+		ctx, current.ID, user.ID, current.FamilyID, hashToken(refresh), s.now().Add(RefreshTTL),
+	)
+	if errors.Is(err, store.ErrTokenReuse) {
+		// Lost the race / replay: another request already rotated this token.
+		// Kill the family so the winner's successor dies too.
+		if err := s.store.RevokeFamily(ctx, current.FamilyID); err != nil {
+			return nil, err
+		}
+		return nil, connect.NewError(connect.CodeUnauthenticated, errInvalidRefresh)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&authv1.RefreshResponse{Tokens: &authv1.TokenPair{
+		AccessToken:     access,
+		AccessExpiresAt: expiresAt,
+		RefreshToken:    refresh,
+	}}), nil
 }
 
 func (s *Service) LogOut(
