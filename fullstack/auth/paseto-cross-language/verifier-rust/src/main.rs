@@ -9,6 +9,7 @@ mod paseto;
 mod pb;
 mod service;
 mod store;
+mod validate;
 
 use pb::bookmark_v1::bookmark_service_server::BookmarkServiceServer;
 use pb::demo_v1::protected_service_server::ProtectedServiceServer;

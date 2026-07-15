@@ -168,11 +168,17 @@ writes, they are one service — merge them, or move the table's ownership.
   place, and all three servers refuse it rather than wave it through. The
   `public` flag still exists in the contract so the default-deny gate counts
   those RPCs as deliberately-open rather than un-annotated.
-- Input validation is also contract-declared (`buf.validate` field rules) —
-  the Go issuer enforces it with one interceptor; handlers assume shaped
-  input. The Rust server has no first-party protovalidate runtime, so it
-  re-checks the same rules by hand, counting Unicode characters (not bytes)
-  to stay byte-for-byte compatible with protovalidate on non-ASCII input.
+- Input validation is contract-declared (`buf.validate` field rules) and
+  enforced automatically in all three servers — no hand-written checks to
+  drift from the proto. Go uses `connectrpc.com/validate`, TS
+  protovalidate-es, and Rust the community `prost-protovalidate` crate in its
+  runtime-bridge mode: it reads the rules from the same committed descriptor
+  set the ACL reflects over and validates a request by transcoding it to wire
+  bytes (`verifier-rust/src/validate.rs`). buf ships no first-party Rust
+  runtime, so this is the one place the pattern takes a community dependency
+  rather than an official one — the alternative (hand-checking, which drifts:
+  an early version compared byte length where the contract counts characters)
+  is worse.
 - What is hand-written per new entity, once this structure exists: the proto
   messages/RPCs (~15 lines), one goose migration, a handful of sqlc queries,
   and the business logic. Stores, stubs, TS types, front hooks and the ACL

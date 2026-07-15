@@ -153,10 +153,10 @@ export const DeleteBookmarkResponseSchema: GenMessage<DeleteBookmarkResponse> = 
  * no other service touches it. One owner per table; everyone else goes
  * through this API.
  *
- * Note on validation: the buf.validate rules below are enforced by clients
- * and documented in the contract, but Rust has no first-party protovalidate
- * runtime — the handler enforces them by hand (see PATTERN.md Key points
- * for the switch-over threshold).
+ * The buf.validate rules below are enforced automatically by every server:
+ * Go/TS via first-party protovalidate, Rust via the community
+ * prost-protovalidate crate over the committed descriptor set (see
+ * verifier-rust/src/validate.rs).
  *
  * @generated from service bookmark.v1.BookmarkService
  */

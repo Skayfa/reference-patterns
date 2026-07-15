@@ -11,15 +11,21 @@ use crate::pb::bookmark_v1::{
     DeleteBookmarkResponse, ListBookmarksRequest, ListBookmarksResponse,
 };
 use crate::store::Store;
+use crate::validate::Validator;
 
 pub struct BookmarkServiceImpl {
     store: Store,
     rules: AccessRules,
+    validator: Validator,
 }
 
 impl BookmarkServiceImpl {
     pub fn new(store: Store) -> Self {
-        Self { store, rules: AccessRules::from_contract() }
+        Self {
+            store,
+            rules: AccessRules::from_contract(),
+            validator: Validator::from_contract(),
+        }
     }
 }
 
@@ -40,17 +46,9 @@ impl BookmarkService for BookmarkServiceImpl {
     ) -> Result<Response<CreateBookmarkResponse>, Status> {
         let claims = authorize(&self.rules, &request, "bookmark.v1.BookmarkService.CreateBookmark")?;
         let msg = request.into_inner();
-        // buf.validate rules from the proto, enforced by hand: Rust has no
-        // first-party protovalidate runtime (see PATTERN.md Key points).
-        // protovalidate counts Unicode characters, not bytes, so use
-        // chars().count() to match the contract for non-ASCII input.
-        let url_len = msg.url.chars().count();
-        if url_len == 0 || url_len > 2048 {
-            return Err(Status::invalid_argument("url must be 1..2048 characters"));
-        }
-        if msg.title.chars().count() > 200 {
-            return Err(Status::invalid_argument("title must be at most 200 characters"));
-        }
+        // buf.validate rules straight from the proto, enforced by the same
+        // contract the Go/TS interceptors read — no hand-written length checks.
+        self.validator.check("bookmark.v1.CreateBookmarkRequest", &msg)?;
         let created = self
             .store
             .create(&claims.subject, &msg.url, &msg.title)
@@ -80,7 +78,9 @@ impl BookmarkService for BookmarkServiceImpl {
         request: Request<DeleteBookmarkRequest>,
     ) -> Result<Response<DeleteBookmarkResponse>, Status> {
         let claims = authorize(&self.rules, &request, "bookmark.v1.BookmarkService.DeleteBookmark")?;
-        let id = request.into_inner().id;
+        let msg = request.into_inner();
+        self.validator.check("bookmark.v1.DeleteBookmarkRequest", &msg)?;
+        let id = msg.id;
         let existing = self
             .store
             .by_id(&id)
@@ -165,7 +165,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn enforces_the_contract_validation_rules_by_hand() {
+    async fn enforces_the_contract_validation_rules() {
+        // The rules come from the proto (buf.validate) via prost-protovalidate,
+        // not hand-written checks — see src/validate.rs.
         let svc = service().await;
         let err = svc
             .create_bookmark(with_claims(
