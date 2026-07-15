@@ -166,6 +166,15 @@ describe("App", () => {
     expect(denials).toHaveLength(3);
   });
 
+  it("reflects the role's contract permissions in the grants panel", async () => {
+    await logIn(fakeIssuerAndServers());
+    // Resolved from the same contract the servers use: user has notes.* but
+    // not the elevated / admin permissions.
+    expect(await screen.findByText(/notes\.write: allowed/)).toBeInTheDocument();
+    expect(screen.getByText(/admin\.notes\.delete_any: denied/)).toBeInTheDocument();
+    expect(screen.getByText(/admin\.diagnostics: denied/)).toBeInTheDocument();
+  });
+
   it("rotates the refresh token", async () => {
     const user = await logIn(fakeIssuerAndServers());
     await user.click(screen.getByRole("button", { name: /refresh session/i }));

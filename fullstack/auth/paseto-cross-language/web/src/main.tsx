@@ -5,6 +5,7 @@ import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AuthForms } from "./auth-forms.js";
 import { BookmarksPanel } from "./bookmarks-panel.js";
+import { GrantsPanel } from "./grants-panel.js";
 import { NotesPanel } from "./notes-panel.js";
 import { AuthService } from "./pb/auth/v1/auth_pb.js";
 import { type Session, sessionFrom } from "./session.js";
@@ -61,6 +62,7 @@ function Dashboard({
         Log out
       </button>
       {status && <p role="status">{status}</p>}
+      <GrantsPanel transport={transports.go} />
       <WhoAmIPanel transports={transports} />
       <AdminPanel transports={transports} />
       <NotesPanel transport={transports.go} />
