@@ -985,9 +985,11 @@ svg.focused .cnode:not(.lit) {
     }
   }
 
+  /* negative delay = phase shift: every halo pulses from the first frame,
+     no matter how many nodes the corpus grows to */
   .cnode:not(.src):not(.lit) .halo {
     animation: halo-pulse 5s ease-in-out infinite;
-    animation-delay: calc(var(--i, 0) * 350ms);
+    animation-delay: calc(var(--i, 0) * -350ms);
   }
 
   @keyframes dust-twinkle {
@@ -1015,10 +1017,12 @@ svg.focused .cnode:not(.lit) {
     }
   }
 
+  /* min() caps: entrance staggers must stay bounded as the corpus grows —
+     1000 edges at 45ms each would otherwise stagger for 45 seconds */
   .synapse {
     stroke-dasharray: 1;
     animation: edge-draw 900ms ease-out both;
-    animation-delay: calc(420ms + var(--ei, 0) * 45ms);
+    animation-delay: min(calc(420ms + var(--ei, 0) * 45ms), 2600ms);
   }
 
   /* fill-mode backwards: the entrance must release the element once done, or
@@ -1034,7 +1038,7 @@ svg.focused .cnode:not(.lit) {
     transform-box: fill-box;
     transform-origin: center;
     animation: node-in 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-    animation-delay: calc(var(--i, 0) * 60ms);
+    animation-delay: min(calc(var(--i, 0) * 60ms), 1800ms);
   }
 }
 
