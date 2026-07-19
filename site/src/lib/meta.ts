@@ -8,6 +8,7 @@ const LANGUAGE_ACCENTS: Record<string, string> = {
   rust: '#E8825A',
   fullstack: '#B58CF2',
   protobuf: '#5FC98E',
+  swift: '#F06292',
 };
 
 export const accentFor = (language: string): string =>

@@ -831,50 +831,120 @@ button {
   max-width: 52ch;
 }
 
+/* Fixed width: the hover hint in the caption must never resize the figure —
+   a wider figure shifts the svg and yanks the node out from under the cursor
+   (enter/leave flicker). */
 .constellation {
   flex-shrink: 0;
+  width: min(420px, 84vw);
   text-align: center;
 }
 
 .constellation svg {
-  width: min(320px, 78vw);
+  width: 100%;
   height: auto;
   overflow: visible;
 }
 
+/* star dust — the sky behind the graph */
+.dust circle {
+  fill: var(--ivory);
+  opacity: var(--o, 0.1);
+}
+
+/* synapses — curved, gradient-stroked between the two node accents. The
+   gradient rides the stroke ATTRIBUTE; CSS stroke here would override it, so
+   only chain links (no shared tag, no gradient) get a CSS stroke. */
 .synapse {
-  stroke: var(--hairline);
-  stroke-width: 1;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.9;
+  transition:
+    opacity 220ms ease-out,
+    stroke-width 220ms ease-out;
+}
+
+.synapse:not(.shared) {
+  stroke: rgba(242, 239, 233, 0.1);
+  stroke-dasharray: 0.02 0.025;
 }
 
 .synapse.shared {
-  stroke: rgba(242, 239, 233, 0.16);
+  opacity: 0.62;
 }
 
+.synapse.shared.lit {
+  opacity: 1;
+  stroke-width: 2.4;
+}
+
+svg.focused .synapse:not(.lit) {
+  opacity: 0.07;
+}
+
+/* nodes */
 .cnode circle {
-  transition: opacity 150ms ease-out;
+  transition:
+    opacity 200ms ease-out,
+    r 200ms ease-out;
 }
 
 .cnode .halo {
-  opacity: 0.08;
+  opacity: 0.09;
 }
 
-.cnode text {
-  font-family: var(--mono);
-  font-size: 10px;
-  fill: var(--muted);
+.cnode .vring {
+  fill: none;
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.cnode .hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.cnode .nlabel {
   opacity: 0;
-  transition: opacity 150ms ease-out;
+  transition: opacity 180ms ease-out;
   pointer-events: none;
 }
 
-.cnode:hover text {
-  opacity: 1;
+.cnode .nlabel text {
+  font-family: var(--mono);
+  font-size: 9.5px;
   fill: var(--ivory);
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
-.cnode:hover .halo {
-  opacity: 0.25;
+.cnode .nlabel .sub {
+  font-size: 8px;
+  fill: var(--muted);
+}
+
+/* Obsidian-style neighborhood: hovered node + its wired patterns light up,
+   everything else recedes into the sky. */
+svg.focused .cnode:not(.lit) {
+  opacity: 0.16;
+}
+
+.cnode.lit .nlabel {
+  opacity: 1;
+}
+
+.cnode.lit:not(.src) .nlabel .sub {
+  opacity: 0;
+}
+
+.cnode.src .halo {
+  opacity: 0.32;
+}
+
+.cnode.lit:not(.src) .halo {
+  opacity: 0.18;
 }
 
 .constellation figcaption {
@@ -883,22 +953,88 @@ button {
   font-size: 10px;
   letter-spacing: 0.06em;
   color: var(--muted);
+  display: grid;
+  /* two lines reserved: a wrapping hint must not grow the hero and re-center
+     the svg mid-hover */
+  min-height: 34px;
+  align-content: start;
+}
+
+.constellation figcaption > span {
+  grid-area: 1 / 1;
+  transition: opacity 180ms ease-out;
+}
+
+.constellation .cap-hint {
+  opacity: 0;
+  color: var(--ivory);
+}
+
+.constellation.hinting .cap-hint {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   @keyframes halo-pulse {
     0%,
     100% {
-      opacity: 0.06;
+      opacity: 0.07;
     }
     50% {
-      opacity: 0.2;
+      opacity: 0.22;
     }
   }
 
-  .cnode .halo {
-    animation: halo-pulse 4.5s ease-in-out infinite;
+  .cnode:not(.src):not(.lit) .halo {
+    animation: halo-pulse 5s ease-in-out infinite;
     animation-delay: calc(var(--i, 0) * 350ms);
+  }
+
+  @keyframes dust-twinkle {
+    0%,
+    100% {
+      opacity: var(--o, 0.1);
+    }
+    50% {
+      opacity: calc(var(--o, 0.1) * 0.3);
+    }
+  }
+
+  .dust circle {
+    animation: dust-twinkle 6s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * -260ms);
+  }
+
+  /* first paint: synapses draw themselves, nodes condense out of the dust */
+  @keyframes edge-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .synapse {
+    stroke-dasharray: 1;
+    animation: edge-draw 900ms ease-out both;
+    animation-delay: calc(420ms + var(--ei, 0) * 45ms);
+  }
+
+  /* fill-mode backwards: the entrance must release the element once done, or
+     its final keyframe would pin opacity and defeat the hover dimming */
+  @keyframes node-in {
+    from {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+  }
+
+  .cnode {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-in 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
   }
 }
 
