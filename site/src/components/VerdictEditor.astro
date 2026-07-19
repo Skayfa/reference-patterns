@@ -1,0 +1,184 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import VerdictBadge from './VerdictBadge.astro';
+import { VERDICT_COLORS, type Verdict } from '../lib/meta';
+
+interface Props {
+  pattern: CollectionEntry<'patterns'>;
+}
+
+const { pattern } = Astro.props;
+const d = pattern.data;
+const verdicts: Verdict[] = ['adopted', 'trial', 'rejected'];
+---
+
+<section
+  class="verdict-zone"
+  id="verdict-zone"
+  data-path={`${pattern.id}/PATTERN.md`}
+  data-name={d.name}
+  data-verdict={d.verdict ?? ''}
+  data-note={d.verdict_note ?? ''}
+>
+  {
+    d.verdict && (
+      <aside class="verdict-callout" style={`--verdict: ${VERDICT_COLORS[d.verdict]}`}>
+        <VerdictBadge verdict={d.verdict} />
+        {d.verdict_note && <p>{d.verdict_note}</p>}
+        <button type="button" class="verdict-change" data-open-editor>
+          change
+        </button>
+      </aside>
+    )
+  }
+  {
+    !d.verdict && (
+      <div class="verdict-prompt">
+        <span class="verdict-ask">your verdict —</span>
+        <button type="button" class="verdict-change" data-open-editor>
+          decide
+        </button>
+      </div>
+    )
+  }
+
+  <form class="verdict-editor" hidden>
+    <div class="verdict-options">
+      {
+        verdicts.map((v) => (
+          <button
+            type="button"
+            class="chip verdict-option"
+            data-value={v}
+            aria-pressed={d.verdict === v ? 'true' : 'false'}
+            style={`--chip: ${VERDICT_COLORS[v]}`}
+          >
+            <span class="dot" />
+            {v}
+          </button>
+        ))
+      }
+    </div>
+    <input
+      type="text"
+      name="note"
+      placeholder="why — one line, in your own words"
+      value={d.verdict_note ?? ''}
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <div class="verdict-token" hidden>
+      <input type="password" name="token" placeholder="GitHub token (contents: read/write)" autocomplete="off" />
+      <a
+        href="https://github.com/settings/personal-access-tokens/new"
+        target="_blank"
+        rel="noopener">create a fine-grained token for this repo ↗</a
+      >
+    </div>
+    <div class="verdict-actions">
+      <button type="submit" class="verdict-commit">commit</button>
+      <button type="button" class="verdict-cancel">cancel</button>
+      <span class="verdict-status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<script>
+  const REPO = 'Skayfa/reference-patterns';
+  const TOKEN_KEY = 'reference-patterns-token';
+
+  const utf8ToB64 = (s: string) =>
+    btoa(Array.from(new TextEncoder().encode(s), (b) => String.fromCharCode(b)).join(''));
+  const b64ToUtf8 = (s: string) =>
+    new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+
+  function withVerdict(raw: string, verdict: string | null, note: string): string {
+    const match = raw.match(/^---\n([\s\S]*?)\n---/);
+    if (!match) throw new Error('no frontmatter found');
+    const lines = match[1].split('\n').filter((l) => !/^verdict(_note)?:/.test(l));
+    if (verdict) {
+      lines.push(`verdict: ${verdict}`);
+      if (note) lines.push(`verdict_note: ${JSON.stringify(note)}`);
+    }
+    return raw.replace(match[0], `---\n${lines.join('\n')}\n---`);
+  }
+
+  function initVerdictEditor() {
+    const zone = document.getElementById('verdict-zone');
+    if (!zone) return;
+
+    const editor = zone.querySelector<HTMLFormElement>('.verdict-editor')!;
+    const options = [...editor.querySelectorAll<HTMLButtonElement>('.verdict-option')];
+    const noteInput = editor.querySelector<HTMLInputElement>('input[name="note"]')!;
+    const tokenRow = editor.querySelector<HTMLElement>('.verdict-token')!;
+    const tokenInput = editor.querySelector<HTMLInputElement>('input[name="token"]')!;
+    const status = editor.querySelector<HTMLElement>('.verdict-status')!;
+
+    zone.querySelector('[data-open-editor]')?.addEventListener('click', () => {
+      zone.querySelector('.verdict-callout, .verdict-prompt')?.setAttribute('hidden', '');
+      editor.hidden = false;
+      if (!localStorage.getItem(TOKEN_KEY)) tokenRow.hidden = false;
+      noteInput.focus();
+    });
+
+    editor.querySelector('.verdict-cancel')?.addEventListener('click', () => {
+      editor.hidden = true;
+      zone.querySelector('.verdict-callout, .verdict-prompt')?.removeAttribute('hidden');
+    });
+
+    for (const option of options) {
+      option.addEventListener('click', () => {
+        const wasActive = option.getAttribute('aria-pressed') === 'true';
+        options.forEach((o) => o.setAttribute('aria-pressed', 'false'));
+        // clicking the active verdict clears it — changing your mind is the point
+        if (!wasActive) option.setAttribute('aria-pressed', 'true');
+      });
+    }
+
+    editor.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = tokenInput.value.trim() || localStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        tokenRow.hidden = false;
+        status.textContent = 'token required';
+        return;
+      }
+
+      const verdict =
+        options.find((o) => o.getAttribute('aria-pressed') === 'true')?.dataset.value ?? null;
+      const note = noteInput.value.trim();
+      const path = zone.dataset.path!;
+      const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+      const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' };
+
+      status.textContent = 'committing…';
+      try {
+        const current = await fetch(`${url}?ref=main`, { headers });
+        if (current.status === 401 || current.status === 403) {
+          localStorage.removeItem(TOKEN_KEY);
+          tokenRow.hidden = false;
+          status.textContent = 'token rejected — paste a valid one';
+          return;
+        }
+        const file = await current.json();
+        const updated = withVerdict(b64ToUtf8(file.content), verdict, note);
+        const message = verdict
+          ? `verdict: ${verdict} — ${zone.dataset.name}`
+          : `verdict cleared — ${zone.dataset.name}`;
+        const put = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ message, content: utf8ToB64(updated), sha: file.sha, branch: 'main' }),
+        });
+        if (!put.ok) throw new Error(`${put.status} ${(await put.json()).message ?? ''}`);
+        localStorage.setItem(TOKEN_KEY, token);
+        tokenRow.hidden = true;
+        status.textContent = 'committed ✓ — live once the site redeploys (~1 min)';
+      } catch (err) {
+        status.textContent = `failed: ${err instanceof Error ? err.message : err}`;
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initVerdictEditor);
+</script>

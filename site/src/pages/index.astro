@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import FilterBar from '../components/FilterBar.astro';
 import PatternCard from '../components/PatternCard.astro';
+import Constellation from '../components/Constellation.astro';
 import { languageHeading } from '../lib/meta';
 
 const patterns = await getCollection('patterns');
@@ -21,12 +22,15 @@ const byLanguage = (lang: string) =>
 
 <Base title="reference-patterns">
   <section class="hero">
-    <h1>Patterns worth keeping.</h1>
-    <p class="tagline">
-      Implementation and testing patterns distilled from real projects — each one a
-      self-contained, runnable example, with the verdicts they earned over time.
-    </p>
-    <p class="stats">{patterns.length} patterns · {languages.length} languages</p>
+    <div class="hero-text">
+      <h1>Patterns worth keeping.</h1>
+      <p class="tagline">
+        Implementation and testing patterns distilled from real projects — each one a
+        self-contained, runnable example, with the verdicts they earned over time.
+      </p>
+      <p class="stats">{patterns.length} patterns · {languages.length} languages · growing</p>
+    </div>
+    <Constellation patterns={patterns} />
   </section>
 
   <FilterBar patterns={patterns} />
@@ -51,3 +55,25 @@ const byLanguage = (lang: string) =>
     <button type="button">clear filters</button>
   </div>
 </Base>
+
+<script>
+  // Keyboard browsing: "/" focuses search, j/k walk the visible cards.
+  // Attached once at module scope — the document survives view transitions.
+  document.addEventListener('keydown', (e) => {
+    const search = document.getElementById('pattern-search');
+    if (!search) return;
+    const typing = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName);
+    if (e.key === '/' && !typing) {
+      e.preventDefault();
+      search.focus();
+    } else if ((e.key === 'j' || e.key === 'k') && !typing && !e.metaKey && !e.ctrlKey) {
+      const cards = [...document.querySelectorAll<HTMLElement>('.card:not([hidden])')];
+      if (!cards.length) return;
+      const current = cards.indexOf(document.activeElement as HTMLElement);
+      const next =
+        e.key === 'j' ? Math.min(current + 1, cards.length - 1) : Math.max(current - 1, 0);
+      cards[next].focus();
+      cards[next].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  });
+</script>

@@ -5,6 +5,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
+import CommandPalette from '../components/CommandPalette.astro';
 import { REPO_URL, withBase } from '../lib/meta';
 
 interface Props {
@@ -30,8 +31,12 @@ const {
   <body>
     <header class="site-header">
       <a class="wordmark" href={withBase('/')}><span class="diamond">◆</span>reference-patterns</a>
-      <a class="gh-link" href={REPO_URL} target="_blank" rel="noopener">github ↗</a>
+      <span class="header-right">
+        <button type="button" class="palette-trigger" data-open-palette>⌘K</button>
+        <a class="gh-link" href={REPO_URL} target="_blank" rel="noopener">github ↗</a>
+      </span>
     </header>
+    <CommandPalette />
     <main>
       <slot />
     </main>

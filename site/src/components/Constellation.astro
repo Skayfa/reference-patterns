@@ -1,0 +1,68 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { accentFor, withBase } from '../lib/meta';
+
+interface Props {
+  patterns: CollectionEntry<'patterns'>[];
+}
+
+const { patterns } = Astro.props;
+
+// Phyllotaxis spiral: each new pattern grows the cluster outward like a
+// living thing — the layout is deterministic, no stored positions.
+const GOLDEN_ANGLE = 2.39996;
+const SIZE = 340;
+const center = SIZE / 2;
+
+const nodes = patterns.map((p, i) => {
+  const r = 30 * Math.sqrt(i + 0.5);
+  return {
+    pattern: p,
+    x: center + r * Math.cos(i * GOLDEN_ANGLE),
+    y: center + r * Math.sin(i * GOLDEN_ANGLE),
+    accent: accentFor(p.data.language),
+    i,
+  };
+});
+
+// Synapses: patterns sharing a tag are wired together; the spiral chain
+// keeps isolated nodes attached to the cluster.
+const edges: { a: number; b: number; shared: boolean }[] = [];
+for (let a = 0; a < nodes.length; a++) {
+  for (let b = a + 1; b < nodes.length; b++) {
+    const sharedTag = nodes[a].pattern.data.tags.some((t) =>
+      nodes[b].pattern.data.tags.includes(t)
+    );
+    if (sharedTag) edges.push({ a, b, shared: true });
+  }
+  if (a > 0 && !edges.some((e) => e.b === a && e.shared)) {
+    edges.push({ a: a - 1, b: a, shared: false });
+  }
+}
+---
+
+<figure class="constellation">
+  <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label="The pattern corpus as a growing constellation">
+    {
+      edges.map(({ a, b, shared }) => (
+        <line
+          x1={nodes[a].x}
+          y1={nodes[a].y}
+          x2={nodes[b].x}
+          y2={nodes[b].y}
+          class={shared ? 'synapse shared' : 'synapse'}
+        />
+      ))
+    }
+    {
+      nodes.map(({ pattern, x, y, accent, i }) => (
+        <a href={withBase(`/${pattern.id}/`)} class="cnode" style={`--i: ${i}; --node: ${accent}`}>
+          <circle cx={x} cy={y} r={pattern.data.verdict ? 7 : 5} fill={accent} />
+          <circle cx={x} cy={y} r={pattern.data.verdict ? 12 : 10} class="halo" fill={accent} />
+          <text x={x + 14} y={y + 4}>{pattern.data.name}</text>
+        </a>
+      ))
+    }
+  </svg>
+  <figcaption>the corpus, growing — each node a pattern, wired by shared tags</figcaption>
+</figure>

@@ -1,8 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import VerdictBadge from '../components/VerdictBadge.astro';
-import { accentFor, sourceUrl, VERDICT_COLORS, withBase } from '../lib/meta';
+import VerdictEditor from '../components/VerdictEditor.astro';
+import { accentFor, sourceUrl, withBase } from '../lib/meta';
 
 export async function getStaticPaths() {
   const patterns = await getCollection('patterns');
@@ -29,6 +29,7 @@ const next = sameLanguage[position + 1];
 ---
 
 <Base title={`${d.name} · reference-patterns`} description={d.description}>
+  <div class="read-progress" style={`--accent: ${accentFor(d.language)}`}></div>
   <article class="pattern" style={`--accent: ${accentFor(d.language)}`}>
     <header>
       <p class="breadcrumb"><a href={withBase('/')}>index</a> / {breadcrumb}</p>
@@ -41,14 +42,7 @@ const next = sameLanguage[position + 1];
       </div>
     </header>
 
-    {
-      d.verdict && (
-        <aside class="verdict-callout" style={`--verdict: ${VERDICT_COLORS[d.verdict]}`}>
-          <VerdictBadge verdict={d.verdict} />
-          {d.verdict_note && <p>{d.verdict_note}</p>}
-        </aside>
-      )
-    }
+    <VerdictEditor pattern={pattern} />
 
     <div class="meta-row">
       {
@@ -95,5 +89,45 @@ const next = sameLanguage[position + 1];
     });
   }
 
-  document.addEventListener('astro:page-load', initCopy);
+  function initCodeCopy() {
+    for (const pre of document.querySelectorAll<HTMLElement>('.article-body pre')) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.textContent = 'copy';
+      button.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? '');
+        button.textContent = 'copied';
+        setTimeout(() => (button.textContent = 'copy'), 1600);
+      });
+      pre.appendChild(button);
+    }
+  }
+
+  function initAnchors() {
+    for (const heading of document.querySelectorAll<HTMLElement>('.article-body h2[id]')) {
+      const anchor = document.createElement('a');
+      anchor.className = 'heading-anchor';
+      anchor.href = `#${heading.id}`;
+      anchor.textContent = '#';
+      anchor.setAttribute('aria-label', 'Link to this section');
+      heading.appendChild(anchor);
+    }
+  }
+
+  // Module scope: window survives view transitions, so attach exactly once.
+  const updateProgress = () => {
+    const bar = document.querySelector<HTMLElement>('.read-progress');
+    if (!bar) return;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(scrollY / max, 1) : 0})`;
+  };
+  addEventListener('scroll', updateProgress, { passive: true });
+
+  document.addEventListener('astro:page-load', () => {
+    initCopy();
+    initCodeCopy();
+    initAnchors();
+    updateProgress();
+  });
 </script>
