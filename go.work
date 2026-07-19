@@ -4,5 +4,6 @@ use (
 	./fullstack/auth/paseto-cross-language/issuer-go
 	./fullstack/rpc/connect-protovalidate-tanstack/server
 	./go/concurrency/bounded-parallel-map
+	./go/storage/idempotent-create
 	./go/testing/table-driven-tests
 )

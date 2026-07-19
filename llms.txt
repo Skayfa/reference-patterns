@@ -11,6 +11,7 @@
 ## Go
 
 - [bounded-parallel-map](https://github.com/Skayfa/reference-patterns/blob/main/go/concurrency/bounded-parallel-map/PATTERN.md): Bounded parallel fan-out in Go — a generic Map with errgroup, context cancellation on first error, order-preserving results, and deterministic concurrency tests (no sleeps)
+- [idempotent-create](https://github.com/Skayfa/reference-patterns/blob/main/go/storage/idempotent-create/PATTERN.md): Create-as-idempotent-upsert keyed by a client-generated UUID — the PRIMARY KEY constraint decides atomically inside the insert (no read-then-insert TOCTOU window); replaying a create returns the existing row unchanged, making at-least-once retries safe
 - [table-driven-tests](https://github.com/Skayfa/reference-patterns/blob/main/go/testing/table-driven-tests/PATTERN.md): Idiomatic Go table-driven tests — named map cases, parallel subtests, t.Helper assertion helpers
 
 ## Protobuf
@@ -22,6 +23,10 @@
 - [ollama-tool-calling](https://github.com/Skayfa/reference-patterns/blob/main/rust/agent/ollama-tool-calling/PATTERN.md): A minimal AI agent with tool-calling in Rust against a local (free) Ollama model — the tool-use loop behind a trait, tested deterministically with a scripted mock (no network, no model)
 - [verify-loop](https://github.com/Skayfa/reference-patterns/blob/main/rust/agent/verify-loop/PATTERN.md): Verify-then-retry combinator — check an output against ground truth, feed failures back and retry until it passes or a budget runs out; agent-agnostic, no dependencies
 - [bm25-ranking](https://github.com/Skayfa/reference-patterns/blob/main/rust/retrieval/bm25-ranking/PATTERN.md): Lexical retrieval with BM25 in ~40 lines of std — chunk text, rank by relevance (IDF + length normalization), no embeddings, no dependencies
+
+## Swift
+
+- [op-outbox](https://github.com/Skayfa/reference-patterns/blob/main/swift/offline/op-outbox/PATTERN.md): Offline-first op outbox as a Swift actor — durable queue with per-entity FIFO (create flushes before edits), value-aware coalescing (latest-wins vs merge), transient/terminal flush semantics, and a materializing merge so unsent creations render in every list
 
 ## TypeScript
 
