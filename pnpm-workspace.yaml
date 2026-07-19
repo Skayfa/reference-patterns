@@ -4,6 +4,10 @@
 packages:
   - typescript/*/*
   - fullstack/*/*/web
+  - site
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
 catalog:
   "@bufbuild/protobuf": ^2.12.0
   "@bufbuild/protovalidate": ^1.2.0

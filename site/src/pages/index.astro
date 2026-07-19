@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import FilterBar from '../components/FilterBar.astro';
+import PatternCard from '../components/PatternCard.astro';
+import { languageHeading } from '../lib/meta';
+
+const patterns = await getCollection('patterns');
+
+const languages = [...new Set(patterns.map((p) => p.data.language))].sort(
+  (a, b) =>
+    patterns.filter((p) => p.data.language === b).length -
+      patterns.filter((p) => p.data.language === a).length || a.localeCompare(b)
+);
+
+const byLanguage = (lang: string) =>
+  patterns
+    .filter((p) => p.data.language === lang)
+    .sort((a, b) => a.data.name.localeCompare(b.data.name));
+---
+
+<Base title="reference-patterns">
+  <section class="hero">
+    <h1>Patterns worth keeping.</h1>
+    <p class="tagline">
+      Implementation and testing patterns distilled from real projects — each one a
+      self-contained, runnable example, with the verdicts they earned over time.
+    </p>
+    <p class="stats">{patterns.length} patterns · {languages.length} languages</p>
+  </section>
+
+  <FilterBar patterns={patterns} />
+
+  {
+    languages.map((lang) => (
+      <section class="lang-group" data-group={lang}>
+        <h2>
+          {languageHeading(lang)} <span class="count">{byLanguage(lang).length}</span>
+        </h2>
+        <div class="grid">
+          {byLanguage(lang).map((pattern, i) => (
+            <PatternCard pattern={pattern} index={i} />
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  <div class="empty-state">
+    <p>Nothing matches.</p>
+    <button type="button">clear filters</button>
+  </div>
+</Base>

@@ -1,0 +1,37 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import VerdictBadge from './VerdictBadge.astro';
+import { accentFor, withBase } from '../lib/meta';
+
+interface Props {
+  pattern: CollectionEntry<'patterns'>;
+  index: number;
+}
+
+const { pattern, index } = Astro.props;
+const d = pattern.data;
+const shownTags = d.tags.slice(0, 4);
+const overflow = d.tags.length - shownTags.length;
+---
+
+<a
+  class="card"
+  href={withBase(`/${pattern.id}/`)}
+  style={`--accent: ${accentFor(d.language)}; --i: ${index}`}
+  data-language={d.language}
+  data-verdict={d.verdict ?? 'none'}
+  data-search={[d.name, d.description, d.category, ...d.tags].join(' ').toLowerCase()}
+>
+  <span class="card-kicker">{d.category}</span>
+  <h3 class="card-name" transition:name={`title-${pattern.id.replaceAll('/', '-')}`}>
+    {d.name}
+  </h3>
+  <p class="card-desc">{d.description}</p>
+  <div class="card-foot">
+    <span class="card-tags">
+      {shownTags.map((tag) => <span class="tag">{tag}</span>)}
+      {overflow > 0 && <span class="tag">+{overflow}</span>}
+    </span>
+    {d.verdict && <VerdictBadge verdict={d.verdict} />}
+  </div>
+</a>

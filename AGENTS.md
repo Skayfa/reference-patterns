@@ -29,9 +29,12 @@ the new versions in one pass.
 ## Comment livrer
 
 - Branch from `main`; review in lazygit before push.
-- No CI — tests are verified locally with `scripts/test-all.sh` before any push.
+- No test CI — tests are verified locally with `scripts/test-all.sh` before any push.
 - Push to `main` = shipped: GitMCP (`https://gitmcp.io/Skayfa/reference-patterns`)
-  serves the repo directly, nothing to deploy.
+  serves the repo directly, and the `Deploy site` workflow rebuilds the web UI
+  (`site/`, Astro) to GitHub Pages at
+  `https://skayfa.github.io/reference-patterns/`. The site auto-discovers
+  every `PATTERN.md` — nothing to register.
 - Never include client-project code (or anything non-generic) — the repo is public.
 
 ## Flow par type
@@ -43,7 +46,10 @@ from the source project's session):
 2. Fill frontmatter: `name` (= slug), `language` (= top-level dir), `category`,
    `tags`, `description` (one line, drives MCP search), `origin` (source
    project + month; sillon subject slug if any; `built in-repo` for
-   explorations), `test`.
+   explorations), `test`. Two optional fields, `verdict`
+   (`adopted | rejected | trial`) and `verdict_note` (one line on why), are
+   added later — once the pattern has proven or failed itself in real use,
+   never at distill time. The site shows them as a badge and a callout.
 3. Write the runnable example — self-contained, no cross-pattern imports.
    TypeScript: the workspace glob (`typescript/*/*`) picks the package up
    automatically; use `"catalog:"` versions (add new deps to the catalog in

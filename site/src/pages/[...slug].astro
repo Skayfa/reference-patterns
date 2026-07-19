@@ -1,0 +1,99 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import VerdictBadge from '../components/VerdictBadge.astro';
+import { accentFor, sourceUrl, VERDICT_COLORS, withBase } from '../lib/meta';
+
+export async function getStaticPaths() {
+  const patterns = await getCollection('patterns');
+  return patterns.map((pattern) => ({
+    params: { slug: pattern.id },
+    props: { pattern },
+  }));
+}
+
+const { pattern } = Astro.props;
+const { Content } = await render(pattern);
+const d = pattern.data;
+
+// The body H1 is the human title; frontmatter name is the slug-like fallback.
+const title = pattern.body?.match(/^#\s+(.+)$/m)?.[1] ?? d.name;
+const breadcrumb = pattern.id.split('/').slice(0, -1).join(' / ');
+
+const sameLanguage = (await getCollection('patterns'))
+  .filter((p) => p.data.language === d.language)
+  .sort((a, b) => a.data.name.localeCompare(b.data.name));
+const position = sameLanguage.findIndex((p) => p.id === pattern.id);
+const prev = sameLanguage[position - 1];
+const next = sameLanguage[position + 1];
+---
+
+<Base title={`${d.name} · reference-patterns`} description={d.description}>
+  <article class="pattern" style={`--accent: ${accentFor(d.language)}`}>
+    <header>
+      <p class="breadcrumb"><a href={withBase('/')}>index</a> / {breadcrumb}</p>
+      <h1 class="pattern-title" transition:name={`title-${pattern.id.replaceAll('/', '-')}`}>
+        {title}
+      </h1>
+      <p class="standfirst">{d.description}</p>
+      <div class="hero-tags">
+        {d.tags.map((tag) => <span class="tag">{tag}</span>)}
+      </div>
+    </header>
+
+    {
+      d.verdict && (
+        <aside class="verdict-callout" style={`--verdict: ${VERDICT_COLORS[d.verdict]}`}>
+          <VerdictBadge verdict={d.verdict} />
+          {d.verdict_note && <p>{d.verdict_note}</p>}
+        </aside>
+      )
+    }
+
+    <div class="meta-row">
+      {
+        d.origin && (
+          <span class="meta-item">
+            <span class="meta-label">origin</span>
+            {d.origin}
+          </span>
+        )
+      }
+      {
+        d.test !== 'none' && (
+          <button class="test-pill" type="button" data-command={d.test} title="Copy test command">
+            <code>{d.test}</code>
+            <span class="copy">copy</span>
+          </button>
+        )
+      }
+      <a class="meta-link" href={sourceUrl(pattern.id)} target="_blank" rel="noopener">
+        view source ↗
+      </a>
+    </div>
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <nav class="pattern-nav">
+      {prev ? <a href={withBase(`/${prev.id}/`)}>← {prev.data.name}</a> : <span />}
+      {next ? <a href={withBase(`/${next.id}/`)}>{next.data.name} →</a> : <span />}
+    </nav>
+  </article>
+</Base>
+
+<script>
+  function initCopy() {
+    const pill = document.querySelector<HTMLButtonElement>('.test-pill');
+    if (!pill) return;
+    const label = pill.querySelector('.copy')!;
+    pill.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(pill.dataset.command!);
+      label.textContent = 'copied';
+      setTimeout(() => (label.textContent = 'copy'), 1600);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCopy);
+</script>

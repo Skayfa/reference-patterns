@@ -1,0 +1,100 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { accentFor, VERDICT_COLORS, type Verdict } from '../lib/meta';
+
+interface Props {
+  patterns: CollectionEntry<'patterns'>[];
+}
+
+const { patterns } = Astro.props;
+
+const languages = [...new Set(patterns.map((p) => p.data.language))].sort();
+const langCount = (lang: string) => patterns.filter((p) => p.data.language === lang).length;
+
+const verdicts: Verdict[] = ['adopted', 'trial', 'rejected'];
+const verdictCount = (v: Verdict) => patterns.filter((p) => p.data.verdict === v).length;
+---
+
+<div class="filterbar" id="filterbar">
+  <input type="search" id="pattern-search" placeholder="search…" autocomplete="off" spellcheck="false" />
+  <div class="chips" data-filter="verdict">
+    {
+      verdicts.map(
+        (v) =>
+          verdictCount(v) > 0 && (
+            <button class="chip" data-value={v} aria-pressed="false" style={`--chip: ${VERDICT_COLORS[v]}`}>
+              <span class="dot" />
+              {v} <span class="count">{verdictCount(v)}</span>
+            </button>
+          )
+      )
+    }
+  </div>
+  <div class="chips" data-filter="language">
+    {
+      languages.map((lang) => (
+        <button class="chip" data-value={lang} aria-pressed="false" style={`--chip: ${accentFor(lang)}`}>
+          <span class="dot" />
+          {lang} <span class="count">{langCount(lang)}</span>
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  function initFilters() {
+    const bar = document.getElementById('filterbar');
+    if (!bar) return;
+
+    const search = document.getElementById('pattern-search') as HTMLInputElement;
+    const chips = [...bar.querySelectorAll<HTMLButtonElement>('.chip')];
+    const cards = [...document.querySelectorAll<HTMLElement>('.card')];
+    const groups = [...document.querySelectorAll<HTMLElement>('.lang-group')];
+    const emptyState = document.querySelector<HTMLElement>('.empty-state');
+
+    const active = (filter: string) =>
+      new Set(
+        chips
+          .filter((c) => c.closest('[data-filter]')?.getAttribute('data-filter') === filter)
+          .filter((c) => c.getAttribute('aria-pressed') === 'true')
+          .map((c) => c.dataset.value!)
+      );
+
+    function apply() {
+      const langs = active('language');
+      const verdicts = active('verdict');
+      const query = search.value.trim().toLowerCase();
+      document.body.classList.toggle('is-filtering', langs.size > 0 || verdicts.size > 0 || query !== '');
+
+      let visible = 0;
+      for (const card of cards) {
+        const show =
+          (langs.size === 0 || langs.has(card.dataset.language!)) &&
+          (verdicts.size === 0 || verdicts.has(card.dataset.verdict!)) &&
+          (query === '' || card.dataset.search!.includes(query));
+        card.hidden = !show;
+        if (show) visible++;
+      }
+      for (const group of groups) {
+        group.hidden = !group.querySelector('.card:not([hidden])');
+      }
+      emptyState?.classList.toggle('visible', visible === 0);
+    }
+
+    for (const chip of chips) {
+      chip.addEventListener('click', () => {
+        chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        apply();
+      });
+    }
+    search.addEventListener('input', apply);
+    document.querySelector('.empty-state button')?.addEventListener('click', () => {
+      search.value = '';
+      chips.forEach((c) => c.setAttribute('aria-pressed', 'false'));
+      apply();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initFilters);
+</script>

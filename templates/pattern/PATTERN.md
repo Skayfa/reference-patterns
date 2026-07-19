@@ -6,6 +6,8 @@ tags: [tag1, tag2]
 description: One-line description — shown in llms.txt and in MCP search results
 origin: source project + month the pattern was distilled from (e.g. `agentic-lab, 2026-07`; add the sillon subject slug if one exists; `built in-repo` for explorations)
 test: command run by scripts/test-all.sh from this directory, after workspace install (e.g. `pnpm test`; use `none` for docs-only patterns)
+# verdict: optional — adopted | rejected | trial, added once the pattern has proven (or failed) itself in real use; never at distill time
+# verdict_note: optional — one line on why the verdict, in your own words
 ---
 
 # Pattern name

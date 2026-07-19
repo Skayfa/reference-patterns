@@ -1,0 +1,13 @@
+---
+import { VERDICT_COLORS, type Verdict } from '../lib/meta';
+
+interface Props {
+  verdict: Verdict;
+}
+
+const { verdict } = Astro.props;
+---
+
+<span class="verdict-badge" style={`--verdict: ${VERDICT_COLORS[verdict]}`}>
+  <span class="dot"></span>{verdict}
+</span>
