@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package bookmark.v1;
+
+import "auth/v1/access.proto";
+import "buf/validate/validate.proto";
+
+// The Rust-owned entity: same shape as note.v1, different owner. The Rust
+// server holds this table in ITS OWN SQLite database (sqlx migrations) —
+// no other service touches it. One owner per table; everyone else goes
+// through this API.
+//
+// The buf.validate rules below are enforced automatically by every server:
+// Go/TS via first-party protovalidate, Rust via the community
+// prost-protovalidate crate over the committed descriptor set (see
+// verifier-rust/src/validate.rs).
+service BookmarkService {
+  rpc CreateBookmark(CreateBookmarkRequest) returns (CreateBookmarkResponse) {
+    option (auth.v1.access) = {permission: "bookmarks.write"};
+  }
+  rpc ListBookmarks(ListBookmarksRequest) returns (ListBookmarksResponse) {
+    option (auth.v1.access) = {permission: "bookmarks.read"};
+  }
+  // Gates "bookmarks.delete" (owners have it); deleting another user's needs
+  // the elevated "admin.bookmarks.delete_any", checked in the handler.
+  rpc DeleteBookmark(DeleteBookmarkRequest) returns (DeleteBookmarkResponse) {
+    option (auth.v1.access) = {permission: "bookmarks.delete"};
+  }
+}
+
+message Bookmark {
+  string id = 1;
+  string url = 2;
+  string title = 3;
+  // RFC 3339.
+  string created_at = 4;
+}
+
+message CreateBookmarkRequest {
+  string url = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+  string title = 2 [(buf.validate.field).string.max_len = 200];
+}
+
+message CreateBookmarkResponse {
+  Bookmark bookmark = 1;
+}
+
+message ListBookmarksRequest {}
+
+message ListBookmarksResponse {
+  repeated Bookmark bookmarks = 1;
+}
+
+message DeleteBookmarkRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message DeleteBookmarkResponse {}

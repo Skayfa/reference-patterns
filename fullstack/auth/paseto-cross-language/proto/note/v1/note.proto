@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package note.v1;
+
+import "auth/v1/access.proto";
+import "buf/validate/validate.proto";
+
+// A user-owned entity, added to demonstrate the "new table" flow: this file
+// plus one goose migration and a handful of sqlc queries are the only
+// hand-written declarations — everything else (Go stubs, typed store, TS
+// types, front hooks, ACL enforcement) is generated or shared.
+//
+// Notes are always scoped to the caller (the token's sub claim): the API
+// never takes a user id. Implemented by the Go server only — it owns the
+// storage; the verifiers have nothing to do with it.
+service NoteService {
+  rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse) {
+    option (auth.v1.access) = {permission: "notes.write"};
+  }
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option (auth.v1.access) = {permission: "notes.read"};
+  }
+  // The option gates "notes.delete" (which owners have); deleting someone
+  // else's requires the elevated "admin.notes.delete_any", checked in the
+  // handler — claims are in the context, put there by the middleware.
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse) {
+    option (auth.v1.access) = {permission: "notes.delete"};
+  }
+}
+
+message Note {
+  string id = 1;
+  string text = 2;
+  // RFC 3339.
+  string created_at = 3;
+}
+
+message CreateNoteRequest {
+  string text = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+}
+
+message CreateNoteResponse {
+  Note note = 1;
+}
+
+message ListNotesRequest {}
+
+message ListNotesResponse {
+  repeated Note notes = 1;
+}
+
+message DeleteNoteRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message DeleteNoteResponse {}

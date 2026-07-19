@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "google/protobuf/descriptor.proto";
+
+// Roles are the closed set of identities; a token carries one role name
+// (lower-cased, "user"/"admin"). Permissions are NOT an enum — they are the
+// free-form strings the RPCs declare (see AccessRule.permission). Each role
+// grants a set of glob patterns over those strings, right here in the
+// contract, so a brand-new permission under an existing prefix is covered
+// automatically with no edit here.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_USER = 1 [
+    (auth.v1.grants) = "profile.read",
+    (auth.v1.grants) = "notes.*",
+    (auth.v1.grants) = "bookmarks.*"
+  ];
+  // "*" matches everything, including permissions added later.
+  ROLE_ADMIN = 2 [(auth.v1.grants) = "*"];
+}
+
+// Per-RPC ACL, carried by the contract. Default-deny: every method must be
+// annotated — public, or with a required permission — and a CI test fails the
+// build otherwise.
+message AccessRule {
+  // The permission this RPC requires, e.g. "notes.write". Free-form: the
+  // catalogue is just the union of these strings across all RPCs, nothing to
+  // maintain on the side. A caller passes if any of its role's grant patterns
+  // matches this string.
+  string permission = 1;
+  // Explicitly unauthenticated (sign-up, log-in, ...); mounted without the
+  // auth interceptor.
+  bool public = 2;
+}
+
+// A role's granted permission patterns. Matching (identical in all three
+// servers): a grant matches a permission if the grant is "*", equals the
+// permission, or ends in ".*" and the permission starts with that prefix
+// ("notes.*" matches "notes.write" and "notes.archive"). Elevated,
+// cross-user capabilities are named under "admin.*" (e.g.
+// "admin.notes.delete_any") so they fall OUTSIDE a resource prefix like
+// "notes.*" and stay reserved to roles granted "*".
+extend google.protobuf.EnumValueOptions {
+  repeated string grants = 50002;
+}
+
+extend google.protobuf.MethodOptions {
+  AccessRule access = 50001;
+}

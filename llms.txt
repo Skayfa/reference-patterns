@@ -5,6 +5,7 @@
 
 ## Fullstack
 
+- [paseto-cross-language](https://github.com/Skayfa/reference-patterns/blob/main/fullstack/auth/paseto-cross-language/PATTERN.md): One proto contract owns API, per-RPC ACL and validation; PASETO v4.public tokens signed by a Go issuer verify locally in Rust and TS; schema+queries declared once (goose+sqlc); React front on generated hooks
 - [connect-protovalidate-tanstack](https://github.com/Skayfa/reference-patterns/blob/main/fullstack/rpc/connect-protovalidate-tanstack/PATTERN.md): End-to-end typed RPC with a single validation source — protovalidate rules in the proto enforced by the Go server AND evaluated in the browser (protovalidate-es as a Standard Schema for TanStack Form), TanStack Query over HTTP GET for cacheable reads, and code-driven error handling caught at the right place (Suspense + error boundary for reads, server violations onto form fields via onSubmitAsync, transient-only retries, panic shield) — tested on both sides without a network
 
 ## Go

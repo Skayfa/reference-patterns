@@ -1,0 +1,18 @@
+# Go consumer (issuer + Go resource server): the full contract.
+# Regenerate everything with: make generate
+version: v2
+managed:
+  enabled: true
+  disable:
+    # Keep the protovalidate dep pointing at its published Go SDK.
+    - module: buf.build/bufbuild/protovalidate
+  override:
+    - file_option: go_package_prefix
+      value: github.com/Skayfa/reference-patterns/fullstack/auth/paseto-cross-language/issuer-go/pb
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: issuer-go/pb
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: issuer-go/pb
+    opt: paths=source_relative

@@ -1,6 +1,7 @@
 go 1.26.4
 
 use (
+	./fullstack/auth/paseto-cross-language/issuer-go
 	./fullstack/rpc/connect-protovalidate-tanstack/server
 	./go/concurrency/bounded-parallel-map
 	./go/testing/table-driven-tests

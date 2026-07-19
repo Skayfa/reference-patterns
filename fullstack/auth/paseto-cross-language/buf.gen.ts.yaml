@@ -1,0 +1,19 @@
+# TypeScript consumers: verifier server, web front, e2e — each package gets
+# its own committed copy (self-contained, no cross-package imports).
+# include_imports so buf/validate/validate_pb.ts lands next to the schemas
+# that reference it; import_extension=js because the Node packages compile
+# under moduleResolution nodenext.
+version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: verifier-ts/src/pb
+    opt: target=ts,import_extension=js
+    include_imports: true
+  - remote: buf.build/bufbuild/es
+    out: web/src/pb
+    opt: target=ts,import_extension=js
+    include_imports: true
+  - remote: buf.build/bufbuild/es
+    out: e2e/src/pb
+    opt: target=ts,import_extension=js
+    include_imports: true
