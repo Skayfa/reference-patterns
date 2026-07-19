@@ -29,7 +29,7 @@ heading() {
 
   for lang_dir in */; do
     lang="${lang_dir%/}"
-    [[ "$lang" == "scripts" || "$lang" == "templates" ]] && continue
+    [[ "$lang" == "scripts" || "$lang" == "templates" || "$lang" == "site" ]] && continue
     patterns=$(find "$lang" -name PATTERN.md -not -path '*/node_modules/*' | sort)
     [[ -z "$patterns" ]] && continue
 

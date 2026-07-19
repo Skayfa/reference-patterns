@@ -1,0 +1,133 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import VerdictEditor from '../components/VerdictEditor.astro';
+import { accentFor, sourceUrl, withBase } from '../lib/meta';
+
+export async function getStaticPaths() {
+  const patterns = await getCollection('patterns');
+  return patterns.map((pattern) => ({
+    params: { slug: pattern.id },
+    props: { pattern },
+  }));
+}
+
+const { pattern } = Astro.props;
+const { Content } = await render(pattern);
+const d = pattern.data;
+
+// The body H1 is the human title; frontmatter name is the slug-like fallback.
+const title = pattern.body?.match(/^#\s+(.+)$/m)?.[1] ?? d.name;
+const breadcrumb = pattern.id.split('/').slice(0, -1).join(' / ');
+
+const sameLanguage = (await getCollection('patterns'))
+  .filter((p) => p.data.language === d.language)
+  .sort((a, b) => a.data.name.localeCompare(b.data.name));
+const position = sameLanguage.findIndex((p) => p.id === pattern.id);
+const prev = sameLanguage[position - 1];
+const next = sameLanguage[position + 1];
+---
+
+<Base title={`${d.name} · reference-patterns`} description={d.description}>
+  <div class="read-progress" style={`--accent: ${accentFor(d.language)}`}></div>
+  <article class="pattern" style={`--accent: ${accentFor(d.language)}`}>
+    <header>
+      <p class="breadcrumb"><a href={withBase('/')}>index</a> / {breadcrumb}</p>
+      <h1 class="pattern-title" transition:name={`title-${pattern.id.replaceAll('/', '-')}`}>
+        {title}
+      </h1>
+      <p class="standfirst">{d.description}</p>
+      <div class="hero-tags">
+        {d.tags.map((tag) => <span class="tag">{tag}</span>)}
+      </div>
+    </header>
+
+    <VerdictEditor pattern={pattern} />
+
+    <div class="meta-row">
+      {
+        d.origin && (
+          <span class="meta-item">
+            <span class="meta-label">origin</span>
+            {d.origin}
+          </span>
+        )
+      }
+      {
+        d.test !== 'none' && (
+          <button class="test-pill" type="button" data-command={d.test} title="Copy test command">
+            <code>{d.test}</code>
+            <span class="copy">copy</span>
+          </button>
+        )
+      }
+      <a class="meta-link" href={sourceUrl(pattern.id)} target="_blank" rel="noopener">
+        view source ↗
+      </a>
+    </div>
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <nav class="pattern-nav">
+      {prev ? <a href={withBase(`/${prev.id}/`)}>← {prev.data.name}</a> : <span />}
+      {next ? <a href={withBase(`/${next.id}/`)}>{next.data.name} →</a> : <span />}
+    </nav>
+  </article>
+</Base>
+
+<script>
+  function initCopy() {
+    const pill = document.querySelector<HTMLButtonElement>('.test-pill');
+    if (!pill) return;
+    const label = pill.querySelector('.copy')!;
+    pill.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(pill.dataset.command!);
+      label.textContent = 'copied';
+      setTimeout(() => (label.textContent = 'copy'), 1600);
+    });
+  }
+
+  function initCodeCopy() {
+    for (const pre of document.querySelectorAll<HTMLElement>('.article-body pre')) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.textContent = 'copy';
+      button.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? '');
+        button.textContent = 'copied';
+        setTimeout(() => (button.textContent = 'copy'), 1600);
+      });
+      pre.appendChild(button);
+    }
+  }
+
+  function initAnchors() {
+    for (const heading of document.querySelectorAll<HTMLElement>('.article-body h2[id]')) {
+      const anchor = document.createElement('a');
+      anchor.className = 'heading-anchor';
+      anchor.href = `#${heading.id}`;
+      anchor.textContent = '#';
+      anchor.setAttribute('aria-label', 'Link to this section');
+      heading.appendChild(anchor);
+    }
+  }
+
+  // Module scope: window survives view transitions, so attach exactly once.
+  const updateProgress = () => {
+    const bar = document.querySelector<HTMLElement>('.read-progress');
+    if (!bar) return;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(scrollY / max, 1) : 0})`;
+  };
+  addEventListener('scroll', updateProgress, { passive: true });
+
+  document.addEventListener('astro:page-load', () => {
+    initCopy();
+    initCodeCopy();
+    initAnchors();
+    updateProgress();
+  });
+</script>

@@ -1,0 +1,147 @@
+---
+import { accentFor, withBase } from '../lib/meta';
+
+// Accent map serialized for the client — single source stays in meta.ts.
+const accents: Record<string, string> = {};
+for (const lang of ['typescript', 'go', 'rust', 'fullstack', 'protobuf']) {
+  accents[lang] = accentFor(lang);
+}
+---
+
+<div
+  class="palette-overlay"
+  id="palette"
+  hidden
+  data-base={withBase('/')}
+  data-accents={JSON.stringify(accents)}
+>
+  <div class="palette" role="dialog" aria-label="Jump to pattern">
+    <input
+      type="text"
+      id="palette-input"
+      placeholder="jump to a pattern…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <ul id="palette-results"></ul>
+    <p class="palette-hint">↑↓ navigate · ↵ open · esc close</p>
+  </div>
+</div>
+
+<script>
+  let index: any[] | null = null;
+
+  function paletteEls() {
+    const overlay = document.getElementById('palette')!;
+    return {
+      overlay,
+      input: document.getElementById('palette-input') as HTMLInputElement,
+      results: document.getElementById('palette-results')!,
+      base: overlay.dataset.base!,
+      accents: JSON.parse(overlay.dataset.accents!) as Record<string, string>,
+    };
+  }
+
+  async function loadIndex(base: string) {
+    if (!index) {
+      index = await (await fetch(`${base}search-index.json`)).json();
+      for (const item of index!) {
+        item.haystack = [item.name, item.id, item.category, ...item.tags].join(' ').toLowerCase();
+      }
+    }
+    return index!;
+  }
+
+  function score(query: string, item: any): number {
+    if (item.name.startsWith(query)) return 0;
+    if (item.name.includes(query)) return 1;
+    if (item.haystack.includes(query)) return 2;
+    let i = 0;
+    for (const ch of item.haystack) if (ch === query[i]) i++;
+    return i >= query.length ? 3 : Infinity;
+  }
+
+  let selected = 0;
+
+  function renderResults() {
+    const { input, results, base, accents } = paletteEls();
+    const query = input.value.trim().toLowerCase();
+    const items = (index ?? [])
+      .map((item) => ({ item, s: query ? score(query, item) : 0 }))
+      .filter(({ s }) => s < Infinity)
+      .sort((a, b) => a.s - b.s || a.item.name.localeCompare(b.item.name))
+      .slice(0, 8);
+
+    selected = Math.min(selected, Math.max(0, items.length - 1));
+    results.innerHTML = items.length
+      ? items
+          .map(
+            ({ item }, i) => `
+        <li>
+          <a href="${base}${item.id}/" data-index="${i}" class="${i === selected ? 'selected' : ''}">
+            <span class="dot" style="background:${accents[item.language] ?? 'var(--muted)'}"></span>
+            <span class="p-name">${item.name}</span>
+            <span class="p-path">${item.id}</span>
+          </a>
+        </li>`
+          )
+          .join('')
+      : '<li class="palette-empty">nothing matches</li>';
+  }
+
+  function openPalette() {
+    const { overlay, input, base } = paletteEls();
+    overlay.hidden = false;
+    input.value = '';
+    selected = 0;
+    loadIndex(base).then(renderResults);
+    input.focus();
+  }
+
+  function closePalette() {
+    paletteEls().overlay.hidden = true;
+  }
+
+  function initPalette() {
+    const { overlay, input, results } = paletteEls();
+
+    document
+      .querySelectorAll('[data-open-palette]')
+      .forEach((el) => el.addEventListener('click', openPalette));
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closePalette();
+    });
+    input.addEventListener('input', () => {
+      selected = 0;
+      renderResults();
+    });
+    input.addEventListener('keydown', (e) => {
+      const links = results.querySelectorAll('a');
+      if (e.key === 'ArrowDown' || (e.key === 'j' && e.ctrlKey)) {
+        e.preventDefault();
+        selected = Math.min(selected + 1, links.length - 1);
+        renderResults();
+      } else if (e.key === 'ArrowUp' || (e.key === 'k' && e.ctrlKey)) {
+        e.preventDefault();
+        selected = Math.max(selected - 1, 0);
+        renderResults();
+      } else if (e.key === 'Enter') {
+        (results.querySelector('a.selected') as HTMLAnchorElement)?.click();
+      } else if (e.key === 'Escape') {
+        closePalette();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      const overlay = document.getElementById('palette');
+      if (overlay?.hidden === false) closePalette();
+      else openPalette();
+    }
+  });
+
+  document.addEventListener('astro:page-load', initPalette);
+</script>

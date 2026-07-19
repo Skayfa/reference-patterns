@@ -1,0 +1,45 @@
+---
+import '@fontsource/instrument-serif';
+import '@fontsource/instrument-serif/400-italic.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import CommandPalette from '../components/CommandPalette.astro';
+import { REPO_URL, withBase } from '../lib/meta';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = 'Personal reference of implementation and testing patterns across languages.',
+} = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href={withBase('/')}><span class="diamond">◆</span>reference-patterns</a>
+      <span class="header-right">
+        <button type="button" class="palette-trigger" data-open-palette>⌘K</button>
+        <a class="gh-link" href={REPO_URL} target="_blank" rel="noopener">github ↗</a>
+      </span>
+    </header>
+    <CommandPalette />
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">distilled patterns · enriched over time</footer>
+  </body>
+</html>
